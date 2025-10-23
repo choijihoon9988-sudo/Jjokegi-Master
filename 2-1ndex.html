@@ -636,21 +636,24 @@
 
 
         // --- S-Class AI Prompts ---
+        // --- [START] 수정된 부분 : 쪼개기 순서 오류 수정 ---
         const SPLIT_PROMPT = (text, mode) => {
             const coreInstruction = `
-                You are an expert in Jacheong's 'Jjokegi Theory'. Your task is to deconstruct the following text not into grammatical sentences, but into the 'Minimum Viable Meaning Units' (최소 의미 단위) that a master marketer would analyze.
-                Analyze the text as if you were dissecting a viral video script or a bestseller's chapter. Identify individual claims, psychological hooks, setup/payoff pairs, problem-solution statements, and distinct persuasive arguments. A single sentence may contain multiple meaning units.
-                Your output MUST be a JSON array of strings, with no other text, commentary, or explanation.
+                You are an expert in Jacheong's 'Jjokegi Theory'. Your task is to analyze the *entire* text provided below to find the 'Minimum Viable Meaning Units' (최소 의미 단위) that a master marketer would identify.
+                A 'Minimum Viable Meaning Unit' is an individual claim, psychological hook, setup/payoff pair, problem-solution statement, or distinct persuasive argument. A single sentence may contain multiple meaning units.
             `;
-            // --- [MODIFIED] 'medium' 코스 추가 ---
-            const modeInstruction = mode === 'quick'
-               ? "From the entire text, extract only the 5 most strategically important meaning units."
-               : (mode === 'medium'
-                    ? "From the entire text, extract only the 10 most strategically important meaning units."
-                    : "Deconstruct the entire text into all its meaning units.");
 
-            return `${coreInstruction}\n\n${modeInstruction}\n\nText to analyze:\n"""${text}"""\n\nOutput only the JSON array.`;
+            const modeInstruction = mode === 'quick'
+               ? "After analyzing the *entire* text, extract *only* the 5 *most strategically important* meaning units from anywhere in the text. Do not just take the first 5."
+               : (mode === 'medium'
+                    ? "After analyzing the *entire* text, extract *only* the 10 *most strategically important* meaning units from anywhere in the text. Do not just take the first 10."
+                    : "Deconstruct the *entire* text into *all* its meaning units, in the order they appear.");
+
+            const outputInstruction = "Your output MUST be a JSON array of strings, with no other text, commentary, or explanation.";
+
+            return `${coreInstruction}\n\n${modeInstruction}\n\n${outputInstruction}\n\nText to analyze:\n"""${text}"""\n\nOutput only the JSON array.`;
         };
+        // --- [END] 수정된 부분 ---
 
         const FEEDBACK_PROMPT = (userAnalyses) => {
             // ***** KOREAN FEEDBACK & ENHANCED JSON MODIFICATION *****
@@ -1100,9 +1103,9 @@
                                 { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
                                 { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
                                 { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                                // --- [START] 400 오류 수정 ---
+                                // --- [START] 400 오류 수정 (이전 수정사항) ---
                                 { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" } // "DANGS" -> "DANGEROUS"
-                                // --- [END] 400 오류 수정 ---
+                                // --- [END] 400 오류 수정 (이전 수정사항) ---
                             ]
                         })
                     });
