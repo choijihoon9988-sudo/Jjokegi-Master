@@ -536,13 +536,11 @@
             <p>매일 한 문장씩 쪼개고, 컨텐츠 마스터가 되세요.</p>
         </header>
 
-        <!-- [NEW] 오류 배너 -->
         <div id="error-banner" class="hidden">
             <p id="error-message">오류가 발생했습니다.</p>
             <button id="error-close" type="button" aria-label="닫기">&times;</button>
         </div>
 
-        <!-- [NEW] 동적 로더 -->
         <div id="dynamic-loader" class="main-card hidden">
             <div class="spinner"></div>
             <p id="loader-text">분석 중입니다...</p>
@@ -552,7 +550,6 @@
         <div class="main-card" id="input-section">
             <h2>1. 분석할 텍스트 입력</h2>
             <textarea id="text-input" placeholder="분석하고 싶은 블로그 글, 영상 대본, 카피 등을 여기에 붙여넣으세요. (50자 이상)"></textarea>
-            <!-- [NEW] 글자 수 카운터 -->
             <div id="char-counter">0 / 50자</div>
 
             <h2 style="margin-top: 32px;">2. 훈련 코스 선택</h2>
@@ -561,7 +558,6 @@
                     <h3>Quick Course</h3>
                     <p>핵심 의미 5개 쪼개기<br>(전략적 핵심 점검)</p>
                 </div>
-                <!-- [NEW] 중급 코스 -->
                 <div class="course-option" data-course="medium">
                     <h3>Medium Course</h3>
                     <p>주요 의미 10개 쪼개기<br>(핵심 논리 집중 훈련)</p>
@@ -577,19 +573,13 @@
 
         <div id="analysis-section" class="hidden">
             <h2 style="text-align: center; margin-bottom: 12px;">3. 사고 과정 분석</h2>
-            <!-- [NEW] 진행률 표시기 -->
             <p id="progress-indicator">0 / 0 항목 분석 완료</p>
             <div id="analysis-inputs">
-                <!-- JS로 동적 생성 -->
-            </div>
+                </div>
             <button id="get-feedback-button" class="btn">분석 완료 & 성장 리포트 보기</button>
         </div>
 
-        <!-- [DELETED] 분석 스켈레톤 로더 -->
-        <!-- <div id="analysis-skeleton" class="main-card hidden"> ... </div> -->
-
-
-         <div id="feedback-report-section" class="hidden">
+        <div id="feedback-report-section" class="hidden">
             <div class="main-card report-header">
                 <h2>📊 성장 리포트</h2>
                  <div id="feedback-score-container">
@@ -634,11 +624,7 @@
              <button id="reset-button" class="btn btn-secondary">새로운 훈련 시작</button>
         </div>
 
-        <!-- [DELETED] 리포트 스켈레톤 로더 -->
-        <!-- <div id="feedback-skeleton" class="hidden"> ... </div> -->
-
-
-    </div> <footer>
+        </div> <footer>
         <p>© 2025 Jjokegi Master. 이상한마케팅 구성원 분들을 위해 만들어졌습니다.</p>
     </footer>
 
@@ -1028,7 +1014,7 @@
                         pointBackgroundColor: 'rgb(74, 128, 243)',
                         pointBorderColor: '#fff',
                         pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgb(74, 128, 243)'
+                        pointHoverBorderColor: 'rgb(77, 128, 243)'
                     }]
                 },
                 options: {
@@ -1114,7 +1100,9 @@
                                 { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
                                 { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
                                 { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                                { category: "HARM_CATEGORY_DANGS_CONTENT", threshold: "BLOCK_NONE" }
+                                // --- [START] 400 오류 수정 ---
+                                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" } // "DANGS" -> "DANGEROUS"
+                                // --- [END] 400 오류 수정 ---
                             ]
                         })
                     });
@@ -1176,14 +1164,16 @@
                          throw error; // 최종 재시도 후에도 실패하면 오류 던짐
                      }
                      // 네트워크 오류 등 재시도 가능한 오류 처리
-                    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('API 호출 실패')) {
+                     // --- [START] 재시도 로직 수정 (이전 수정사항) ---
+                    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                     // --- [END] 재시도 로직 수정 (이전 수정사항) ---
                         retries++;
                         const delay = baseDelay * Math.pow(2, retries);
                         console.warn(`API/Network error. Retrying in ${delay}ms... (${retries}/${maxRetries})`);
                         await new Promise(resolve => setTimeout(resolve, delay));
                         continue; // 다음 재시도
                     } else {
-                        // JSON 파싱 오류 등 재시도 불가능한 오류는 즉시 던짐
+                        // JSON 파싱 오류, 400 오류 등 재시도 불가능한 오류는 즉시 던짐
                         throw error;
                     }
                 }
