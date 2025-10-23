@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쪼개기 마스터 (Jjokegi Master)</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <style>
+        :root {
+            --primary-color: #4A80F3;
+            --danger-color: #D93025;
+            --text-color: #333333;
+            --subtext-color: #555555;
+            --bg-color: #FFFFFF;
+            --border-color: #DDDDDD;
+            --light-bg: #f9f9f9;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        header {
+            text-align: center;
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+        header h1 {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--primary-color);
+            line-height: 1.2;
+        }
+        header p {
+            font-size: 18px;
+            color: var(--subtext-color);
+            margin-top: 16px;
+        }
+        .step-box {
+            margin-bottom: 40px;
+        }
+        .step-box h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        /* 1단계: 입력폼 스타일 */
+        textarea {
+            width: 100%;
+            min-height: 250px;
+            padding: 16px;
+            font-family: "Pretendard", sans-serif;
+            font-size: 16px;
+            line-height: 1.7;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            resize: vertical;
+        }
+        .input-group {
+            margin-top: 24px;
+        }
+        .input-group label {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .input-group input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            font-family: "Pretendard", sans-serif;
+            font-size: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        .api-key-warning {
+            font-size: 13px;
+            color: var(--subtext-color);
+            background-color: var(--light-bg);
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        .course-options {
+            margin-top: 24px;
+            display: grid; /* Flex 대신 Grid 사용 (2열) */
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .course-options label {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            flex: 1;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .course-options label:hover {
+            border-color: #a0b7e8;
+        }
+        .course-options input[type="radio"]:checked + span {
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .course-options input[type="radio"]:checked + span + label {
+             border-color: var(--primary-color);
+             box-shadow: 0 4px 12px rgba(74, 128, 243, 0.1);
+        }
+        .course-options label[for="course-quick"]:has(:checked),
+        .course-options label[for="course-full"]:has(:checked) {
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(74, 128, 243, 0.15);
+        }
+        .course-options input[type="radio"] {
+            margin-right: 12px;
+            accent-color: var(--primary-color);
+        }
+
+        /* 공용 버튼 */
+        button {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            font-family: "Pretendard", sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 24px;
+            width: 100%;
+        }
+        button:hover:not(:disabled) {
+            background-color: #3a68c2;
+        }
+        button:disabled {
+            background-color: #a0b7e8;
+            cursor: not-allowed;
+        }
+
+        /* 2단계: 분석 카드 */
+        .chunk-card {
+            background-color: var(--light-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .chunk-card label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-color);
+            display: block;
+            margin-bottom: 8px;
+        }
+        .chunk-card p.original-text {
+            background-color: white;
+            padding: 16px;
+            border-radius: 4px;
+            border: 1px dashed #DDDDDD;
+            margin-bottom: 16px;
+            line-height: 1.8;
+            color: #111;
+            white-space: pre-wrap; /* 원본 줄바꿈 유지 */
+        }
+        .chunk-card textarea.analysis-input {
+            min-height: 120px;
+            background-color: white;
+        }
+
+        /* 3단계: 피드백 */
+        #feedback-output {
+            background-color: var(--light-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 32px;
+            margin-top: 16px;
+            line-height: 1.8;
+            white-space: pre-wrap; /* AI 피드백의 줄바꿈을 유지 */
+        }
+        #feedback-output h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 16px;
+        }
+
+        /* 유틸리티: 로더, 숨김, 오류 */
+        .hidden {
+            display: none;
+        }
+
+        .loader {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .error-message {
+            display: none;
+            color: var(--danger-color);
+            background-color: #fce8e6;
+            border: 1px solid #f9c6c2;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-weight: 500;
+        }
+        .error-message.show {
+            display: block;
+        }
+
+        /* 푸터 */
+        footer {
+            text-align: center;
+            margin-top: 80px;
+            padding: 24px 20px;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--light-bg);
+        }
+        footer p {
+            font-size: 14px;
+            color: #888888;
+        }
+    </style>
+</head>
+<body>
+
+    <main>
+        <div class="container">
+            <header>
+                <h1>쪼개기 마스터</h1>
+                <p>매일 한 문장씩 쪼개고, 컨텐츠 마스터가 되세요.</p>
+            </header>
+
+            <section id="step1-input" class="step-box" aria-labelledby="step1-title">
+                <h2 id="step1-title">1. 분석할 텍스트 및 API 키 입력</h2>
+                
+                <div class="input-group">
+                    <label for="api-key-input">Gemini API Key</label>
+                    <input type="text" id="api-key-input" placeholder="AIzaSy...로 시작하는 API 키를 입력하세요.">
+                    <p class="api-key-warning">💡 API 키는 브라우저에만 저장되며, 서버로 전송되지 않습니다.</p>
+                </div>
+                
+                <div class="input-group">
+                    <label for="text-input">분석할 텍스트</label>
+                    <textarea id="text-input" placeholder="분석하고 싶은 영상 대본이나 블로그 글을 여기에 붙여넣으세요..."></textarea>
+                </div>
+                
+                <div class="course-options">
+                    <label for="course-quick">
+                        <input type="radio" id="course-quick" name="course" value="quick" checked>
+                        <span>5개 핵심 의미 쪼개기 (Quick)</span>
+                    </label>
+                    <label for="course-full">
+                        <input type="radio" id="course-full" name="course" value="full">
+                        <span>전체 텍스트 쪼개기 (Full Course)</span>
+                    </label>
+                </div>
+                
+                <button id="start-split-button">쪼개기 훈련 시작</button>
+                <div id="step1-error" class="error-message" role="alert"></div>
+            </section>
+
+            <section id="loader" class="loader hidden" aria-live="polite">
+                <div class="spinner"></div>
+                <p style="margin-top: 16px; color: var(--subtext-color);">AI가 '최소 의미 단위'로 텍스트를 쪼개는 중입니다...</p>
+            </section>
+
+            <section id="step2-analysis" class="step-box hidden" aria-labelledby="step2-title">
+                <h2 id="step2-title">2. 쪼개진 단위별 사고 과정 분석</h2>
+                <div id="analysis-container">
+                    </div>
+                <button id="get-feedback-button">분석 완료 & AI 피드백 받기</button>
+                <div id="step2-error" class="error-message" role="alert"></div>
+            </section>
+
+            <section id="step3-feedback" class="step-box hidden" aria-labelledby="step3-title">
+                <h2 id="step3-title">3. AI 시니어 마케터 종합 피드백</h2>
+                <div id="feedback-output">
+                    </div>
+            </section>
+        </div>
+    </main>
+    
+    <footer>
+        <p>© 2025 Jjokegi Master. 이상한마케팅 구성원 분들을 위해 만들어졌습니다.</p>
+    </footer>
+
+    <script>
+        // 스크립트 전체를 DOMContentLoaded로 감싸 전역 스코프 오염 방지
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // 0. API 및 상태 변수
+            // 모델명을 'gemini-1.5-flash' (최신)로 수정
+            const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=";
+            let userApiKey = ''; // API 키를 저장할 변수
+
+            // 1. 요소 선택
+            const step1Div = document.getElementById('step1-input');
+            const step2Div = document.getElementById('step2-analysis');
+            const step3Div = document.getElementById('step3-feedback');
+            const loader = document.getElementById('loader');
+            
+            const apiKeyInput = document.getElementById('api-key-input');
+            const textInput = document.getElementById('text-input');
+            const splitButton = document.getElementById('start-split-button');
+            const feedbackButton = document.getElementById('get-feedback-button');
+            
+            const analysisContainer = document.getElementById('analysis-container');
+            const feedbackOutput = document.getElementById('feedback-output');
+
+            const errorStep1 = document.getElementById('step1-error');
+            const errorStep2 = document.getElementById('step2-error');
+
+            // 2. 이벤트 리스너
+            splitButton.addEventListener('click', handleStartSplit);
+            feedbackButton.addEventListener('click', handleGetFeedback);
+
+            // 3. UI 제어 함수
+            function showLoader(message) {
+                step1Div.classList.add('hidden');
+                step2Div.classList.add('hidden');
+                step3Div.classList.add('hidden');
+                loader.querySelector('p').textContent = message;
+                loader.classList.remove('hidden');
+            }
+
+            function hideLoader() {
+                loader.classList.add('hidden');
+            }
+
+            function showError(message, step) {
+                const errorEl = (step === 1) ? errorStep1 : errorStep2;
+                errorEl.textContent = message;
+                errorEl.classList.add('show');
+            }
+
+            function hideError(step) {
+                const errorEl = (step === 1) ? errorStep1 : errorStep2;
+                errorEl.textContent = '';
+                errorEl.classList.remove('show');
+            }
+
+            // 4. Gemini API 호출 헬퍼 (apiKey를 인자로 받음)
+            async function callGemini(promptText, apiKey) {
+                const API_URL = GEMINI_API_BASE_URL + apiKey;
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: promptText }] }],
+                            safetySettings: [
+                                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                            ]
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`API 오류: ${response.status} ${response.statusText}. ${errorData.error?.message || '응답을 확인하세요.'}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    if (data.candidates && data.candidates[0].content) {
+                        // 성공 시 텍스트 반환
+                        return { text: data.candidates[0].content.parts[0].text };
+                    }
+                    if (data.candidates && data.candidates[0].finishReason === 'SAFETY') {
+                        throw new Error("AI가 안전상의 이유로 답변을 거부했습니다.");
+                    }
+                    if (data.promptFeedback?.blockReason === 'SAFETY') {
+                         throw new Error("AI가 안전상의 이유로 프롬프트를 거부했습니다. (입력값 확인)");
+                    }
+                    
+                    throw new Error("AI로부터 유효한 답변을 받지 못했습니다.");
+
+                } catch (error) {
+                    console.error("Gemini API 호출 오류:", error);
+                    // 오류 발생 시 오류 객체 반환
+                    return { error: error.message };
+                }
+            }
+            
+            // XSS 방지를 위한 HTML 이스케이프 함수
+            function escapeHTML(str) {
+                return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            }
+
+            // 5. [1단계] 텍스트 쪼개기
+            async function handleStartSplit() {
+                hideError(1);
+                const originalText = textInput.value;
+                const apiKey = apiKeyInput.value.trim();
+
+                // 유효성 검사
+                if (!apiKey.startsWith('AIzaSy')) {
+                    showError("유효한 Google AI API 키를 입력하세요. 'AIzaSy'로 시작해야 합니다.", 1);
+                    return;
+                }
+                if (originalText.trim().length < 50) {
+                    showError("분석할 텍스트를 50자 이상 입력하세요.", 1);
+                    return;
+                }
+                
+                // API 키 저장
+                userApiKey = apiKey;
+                
+                const courseType = document.querySelector('input[name="course"]:checked').value;
+
+                showLoader("AI가 '최소 의미 단위'로 텍스트를 쪼개는 중입니다...");
+                splitButton.disabled = true;
+
+                // 프롬프트 정의 (기존과 동일)
+                let splitPrompt;
+                if (courseType === 'quick') {
+                    splitPrompt = `
+                        당신은 자청의 '쪼개기 이론'을 수행하는 AI입니다.
+                        다음 텍스트에서 마케팅적으로 가장 중요한 '핵심 의미 단위' 5개만 선별하여 쪼개주세요.
+                        '최소 의미 단위'여야 합니다. (한두 문장의 덩어리)
+                        
+                        규칙:
+                        1. 텍스트 전체에서 가장 중요한 5개만 골라야 합니다.
+                        2. 원본 텍스트의 순서와 내용을 절대 변경하지 마세요.
+                        3. 결과는 오직 JSON 배열(Array) 형식으로만 반환하세요. 예: ["첫 번째 핵심 문단.", "두 번째 핵심 문단.", ..., "다섯 번째 핵심 문단."]
+                        
+                        [원본 텍스트]
+                        ${originalText}
+                    `;
+                } else {
+                    splitPrompt = `
+                        당신은 자청의 '쪼개기 이론'을 수행하는 AI입니다.
+                        다음 텍스트를 '최소 의미 단위' (한두 문장의 덩어리)로 전부 쪼개주세요.
+                        사용자가 각 쪼개진 단위별로 자신의 "사고 과정"을 분석할 수 있도록 나눠야 합니다.
+                        
+                        규칙:
+                        1. 원본 텍스트의 순서와 내용을 절대 변경하지 마세요.
+                        2. 결과는 오직 JSON 배열(Array) 형식으로만 반환하세요. 예: ["첫 번째 쪼개진 문단.", "두 번째 쪼개진 문단입니다.", "세 번째입니다."]
+                        
+                        [원본 텍스트]
+                        ${originalText}
+                    `;
+                }
+
+                const aiResponse = await callGemini(splitPrompt, userApiKey);
+
+                // API 오류 처리
+                if (aiResponse.error) {
+                    hideLoader();
+                    showError(`쪼개기 실패: ${aiResponse.error}`, 1);
+                    step1Div.classList.remove('hidden');
+                    splitButton.disabled = false;
+                    return;
+                }
+
+                try {
+                    // AI 응답에서 JSON 부분만 깔끔하게 추출
+                    let jsonString = aiResponse.text;
+                    const jsonMatch = aiResponse.text.match(/```json\s*([\s\S]*?)\s*```|(\[.*\])/s);
+                    if (jsonMatch) {
+                        jsonString = jsonMatch[1] || jsonMatch[2];
+                    }
+                    
+                    const chunks = JSON.parse(jsonString);
+                    displayAnalysisInputs(chunks);
+
+                } catch (error) {
+                    console.error("JSON 파싱 오류:", error, "\nAI 원본 응답:", aiResponse.text);
+                    hideLoader();
+                    showError(`오류: AI 응답(JSON) 파싱에 실패했습니다. AI 응답: ${aiResponse.text}`, 1);
+                    step1Div.classList.remove('hidden');
+                    splitButton.disabled = false;
+                }
+            }
+
+            // 6. [2단계] 분석 입력창 표시
+            function displayAnalysisInputs(chunks) {
+                analysisContainer.innerHTML = ''; // 초기화
+                
+                chunks.forEach((chunk, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'chunk-card';
+                    
+                    // escapeHTML 함수로 XSS 방지
+                    card.innerHTML = `
+                        <label>#${index + 1} 원본 의미 단위</label>
+                        <p class="original-text">${escapeHTML(chunk)}</p>
+                        <label for="analysis-input-${index}">나의 사고 과정 분석</label>
+                        <textarea id="analysis-input-${index}" class="analysis-input" placeholder="이 문장을 쓴 의도, 사용한 심리학적 원리, 제거하려 한 고객의 반박 등을 상세히 작성..."></textarea>
+                    `;
+                    analysisContainer.appendChild(card);
+                });
+                
+                hideLoader();
+                step2Div.classList.remove('hidden');
+                window.scrollTo(0, 0); // 화면 상단으로 스크롤
+            }
+
+            // 7. [3단계] 사고 과정 분석 및 피드백 요청
+            async function handleGetFeedback() {
+                hideError(2);
+                showLoader("AI 시니어 마케터가 당신의 사고 과정을 분석 중입니다...");
+                feedbackButton.disabled = true;
+
+                const analysisPairs = [];
+                const chunkCards = document.querySelectorAll('.chunk-card');
+                let analysisMissing = false;
+
+                chunkCards.forEach(card => {
+                    const original = card.querySelector('.original-text').innerText;
+                    const analysisInput = card.querySelector('.analysis-input');
+                    const analysis = analysisInput.value;
+                    
+                    if (analysis.trim() === "") {
+                        analysisMissing = true;
+                        analysisInput.style.border = "2px solid var(--danger-color)";
+                    } else {
+                        analysisInput.style.border = "1px solid var(--border-color)";
+                        analysisPairs.push({
+                            original_chunk: original,
+                            user_analysis: analysis
+                        });
+                    }
+                });
+
+                if (analysisMissing) {
+                    hideLoader();
+                    showError("모든 '사고 과정 분석' 란을 채워주세요.", 2);
+                    step2Div.classList.remove('hidden');
+                    feedbackButton.disabled = false;
+                    return;
+                }
+
+                const prompt = `
+                    당신은 '이상한마케팅'의 시니어 마케터이자 '자청'의 철학을 100% 이해한 AI입니다.
+                    한 구성원이 '쪼개기 이론'을 훈련하기 위해 텍스트를 쪼개고, 각 단위별로 자신의 '사고 과정(글을 쓴 의도)'을 분석한 내용을 제출했습니다.
+                    
+                    당신의 임무는 이 구성원의 "사고 과정(user_analysis)"을 '이상한마케팅'의 핵심 가치(심리학, 본능 분석, 반박 제거, 고객 성공, 가치 증명, LF8)에 따라 날카롭게 평가하고 피드백하는 것입니다.
+                    
+                    [구성원의 분석 내용]
+                    ${JSON.stringify(analysisPairs, null, 2)}
+
+                    [피드백 지시사항]
+                    1. "이상한마케팅 시니어 마케터"의 전문적인 톤으로 피드백하세요.
+                    2. 지원자의 '사고 과정'이 얼마나 깊이 있는지, 고객의 심리를 정확히 꿰뚫었는지 평가하세요.
+                    3. **[잘한 점 (Good Points)]** 과 **[개선할 점 (Areas for Improvement)]** 을 명확한 불릿 포인트로 나눠서 설명하세요.
+                    4. 최종적으로 이 '사고 과정'의 완성도를 **[쪼개기 실력 (100점 만점)]** 으로 평가해주세요.
+                    5. 이 피드백은 구성원의 성장을 돕기 위한 것입니다. 날카롭지만 건설적으로 작성해주세요. (Markdown 형식으로 응답)
+                `;
+
+                const aiFeedback = await callGemini(prompt, userApiKey);
+
+                if (aiFeedback.error) {
+                    hideLoader();
+                    showError(`피드백 생성 실패: ${aiFeedback.error}`, 2);
+                    step2Div.classList.remove('hidden');
+                    feedbackButton.disabled = false;
+                    return;
+                }
+                
+                // (주의) AI의 응답은 Markdown을 포함할 수 있으므로, 
+                // 단순 text가 아닌 HTML로 렌더링해야 합니다.
+                // 여기서는 간단히 <br>로 변환하지만, 실제로는 Markdown 파서 라이브러리(marked.js 등) 사용을 권장합니다.
+                const feedbackHtml = aiFeedback.text
+                    .replace(/</g, "&lt;").replace(/>/g, "&gt;") // 1. 기본 HTML 이스케이프
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // 2. **볼드**
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>') // 3. *이탤릭*
+                    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>') // 4. [링크](url)
+                    .replace(/\n/g, '<br>'); // 5. 줄바꿈
+
+                feedbackOutput.innerHTML = `<h3>AI 시니어 마케터 피드백</h3>${feedbackHtml}`;
+                hideLoader();
+                step3Div.classList.remove('hidden');
+                feedbackButton.disabled = false;
+                window.scrollTo(0, 0); // 화면 상단으로 스크롤
+            }
+
+        }); // End of DOMContentLoaded
+    </script>
+</body>
+</html>
