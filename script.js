@@ -1,3 +1,4 @@
+// choijihoon9988-sudo/jjokegi-master/Jjokegi-Master-482c1b33540918eaed1eab4f9dbaa07c36a973d4/script.js
 // --- AI CONFIGURATION ---
         // !!! 중요 !!!: 테스트를 위해 실제 Google AI Studio에서 발급받은 API 키를 "..." 안에 붙여넣으세요.
         const GEMINI_API_KEY = "AIzaSyCVTLte-n_F-83vTq3P1Fc16NzGXdKaIYI"; // ⬅️ 여기에 실제 API 키를 입력하세요.
@@ -666,7 +667,7 @@
              throw new Error(`API 호출이 ${maxRetries}번의 재시도 후에도 실패했습니다.`);
         }
 
-        // --- [수정된 v4.2] PDF 다운로드 기능 (아코디언 강제 열기 + 섹션별 페이지 분리 + '다음 단계' 카드 제외) ---
+        // --- [수정된 v4.3] PDF 다운로드 기능 (개별 리뷰 항목 캡처) ---
         async function handleDownloadPDF() {
             const { jsPDF } = window.jspdf;
             const reportSection = document.getElementById('feedback-report-section');
@@ -691,14 +692,31 @@
                 });
                 // ---------------------------------------------
                 
-                // [개선 3] '다음 단계' 카드를 제외한 모든 메인 카드를 선택합니다.
-                const cardsToCapture = reportSection.querySelectorAll('.main-card:not(#next-step-card)');
+                // [개선 3 - 수정] 캡처할 요소 목록을 재정의합니다.
+                // 1. 점수/요약 카드 (.report-header)
+                // 2. 1:1 상세 코칭 제목 카드 (detailed-review-container를 감싸는 .main-card)
+                // 3. 개별 리뷰 항목들 (.review-card)
+                
+                const headerCard = reportSection.querySelector('.main-card.report-header');
+                const detailedReviewTitleCard = reportSection.querySelectorAll('.main-card')[1]; // 두 번째 main-card (상세 코칭 제목)
+                
+                // 캡처 대상 목록: [헤더 카드], [상세 코칭 제목 카드], [개별 리뷰 카드들...]
+                const elementsToCapture = [headerCard, detailedReviewTitleCard, ...Array.from(accordions)];
+
+                // [v4.3] 이제 #detailed-review-container를 감싸는 두 번째 main-card는 
+                // 제목과 컨테이너만 포함하므로, 컨테이너를 숨기면 제목만 캡처 가능
+                const reviewContainer = document.getElementById('detailed-review-container');
+                reviewContainer.style.display = 'none';
+                
                 const canvases = [];
                 
                 // DOM이 업데이트(아코디언 열림)된 후 캡처를 위해 잠시 대기
                 await new Promise(resolve => setTimeout(resolve, 100)); 
                 
-                for (const card of cardsToCapture) {
+                // [v4.3] 목록의 요소들을 순서대로 개별 캡처
+                for (const card of elementsToCapture) {
+                     // **Note:** The individual review cards are small, but they must be captured 
+                     // after the main cards (header/title). 
                      const canvas = await html2canvas(card, {
                         scale: 2, // 고해상도 캡처
                         useCORS: true,
@@ -709,6 +727,9 @@
                     canvases.push(canvas);
                 }
                 
+                // [v4.3] 숨겼던 컨테이너 복구
+                reviewContainer.style.display = 'block';
+
                 const pdf = new jsPDF({
                     orientation: 'p',
                     unit: 'px',
@@ -749,6 +770,12 @@
                     // 저장해둔 원래 상태로 되돌립니다.
                     acc.open = originalOpenStates[index];
                 });
+
+                // [v4.3] 상세 코칭 제목 카드 처리 후 숨겼던 컨테이너를 복구
+                const reviewContainer = document.getElementById('detailed-review-container');
+                if(reviewContainer.style.display === 'none') {
+                    reviewContainer.style.display = 'block';
+                }
                 // --------------------------------------------------
         
                 hideDynamicLoader();
