@@ -668,25 +668,43 @@
              throw new Error(`API 호출이 ${maxRetries}번의 재시도 후에도 실패했습니다.`);
         }
 
-        // [v2.2] PDF 다운로드 기능
+        // --- [수정된 v4.2] PDF 다운로드 기능 (아코디언 강제 열기 + 섹션별 페이지 분리 + '다음 단계' 카드 제외) ---
         async function handleDownloadPDF() {
             const { jsPDF } = window.jspdf;
             const reportSection = document.getElementById('feedback-report-section');
+            
+            // [개선 1] 캡처 전에 모든 상세 코칭 아코디언을 찾습니다.
+            const accordions = reportSection.querySelectorAll('#detailed-review-container .review-card');
             
             showDynamicLoader(["리포트를 PDF로 생성 중입니다..."]);
             downloadPdfButton.disabled = true;
             downloadPdfButton.textContent = '생성 중...';
         
+            // [개선 1] 아코디언의 원래 'open' 상태를 저장합니다.
+            const originalOpenStates = [];
+            accordions.forEach((acc, index) => {
+                originalOpenStates[index] = acc.open;
+            });
+        
             try {
-                // [v4.1] 리포트 섹션 내부의 모든 main-card를 캡처 대상으로 함
-                const cardsToCapture = reportSection.querySelectorAll('.main-card');
+                // --- [개선 1] 캡처 전 모든 아코디언 강제 열기 ---
+                accordions.forEach(acc => {
+                    acc.open = true; // 모든 아코디언을 엽니다.
+                });
+                // ---------------------------------------------
+                
+                // [개선 3] '다음 단계' 카드를 제외한 모든 메인 카드를 선택합니다.
+                const cardsToCapture = reportSection.querySelectorAll('.main-card:not(#next-step-card)');
                 const canvases = [];
+                
+                // DOM이 업데이트(아코디언 열림)된 후 캡처를 위해 잠시 대기
+                await new Promise(resolve => setTimeout(resolve, 100)); 
                 
                 for (const card of cardsToCapture) {
                      const canvas = await html2canvas(card, {
-                        scale: 2,
+                        scale: 2, // 고해상도 캡처
                         useCORS: true,
-                        // 개별 카드 기준으로 캡처
+                        // 개별 카드 기준으로 캡처 (스크롤 높이 기준)
                         windowWidth: card.scrollWidth,
                         windowHeight: card.scrollHeight
                     });
@@ -697,33 +715,29 @@
                     orientation: 'p',
                     unit: 'px',
                 });
-
+        
                 let pdfWidth = pdf.internal.pageSize.getWidth();
-                let yPos = 0;
+                const pageMargin = 20; // 페이지 상하단 여백
                 
                 canvases.forEach((canvas, index) => {
                     const imgData = canvas.toDataURL('image/png');
                     const imgWidth = canvas.width;
                     const imgHeight = canvas.height;
                     const ratio = imgHeight / imgWidth;
-                    const pdfImgHeight = pdfWidth * ratio;
-
-                    if (index > 0) {
-                         // 카드 사이에 20px 정도의 여백 추가
-                         yPos += 20; 
-                    }
                     
-                    // 페이지를 넘겨야 하는지 확인 (카드 높이 + 현재 위치 + 하단 여백)
-                    if (yPos + pdfImgHeight > pdf.internal.pageSize.getHeight() - 20) {
+                    // [개선 2] PDF 내부 이미지 너비를 페이지 너비에서 좌우 여백을 뺀 값으로 설정
+                    const pdfImgWidth = pdfWidth - (pageMargin * 2);
+                    const pdfImgHeight = pdfImgWidth * ratio;
+        
+                    // --- [개선 2] 카드(섹션)별로 새 페이지 강제 분리 ---
+                    if (index > 0) {
                         pdf.addPage();
-                        yPos = 0;
                     }
-
-                    // 상단 여백 추가 (첫 페이지 제외)
-                    if (yPos === 0) yPos = 20;
-
-                    pdf.addImage(imgData, 'PNG', 0, yPos, pdfWidth, pdfImgHeight);
-                    yPos += pdfImgHeight;
+                    // -----------------------------------------------
+        
+                    // 이미지를 페이지에 추가 (상단 여백 적용)
+                    // jspdf의 addImage는 이미지가 페이지보다 길 경우 자동으로 분할합니다.
+                    pdf.addImage(imgData, 'PNG', pageMargin, pageMargin, pdfImgWidth, pdfImgHeight);
                 });
         
                 pdf.save(`Jjokegi_Master_Report_${new Date().toISOString().split('T')[0]}.pdf`);
@@ -732,11 +746,19 @@
                 console.error('Error generating PDF:', error);
                 showError('PDF 생성 중 오류가 발생했습니다: ' + error.message);
             } finally {
+                // --- [개선 1] 캡처 후 아코디언 상태 원래대로 복원 ---
+                accordions.forEach((acc, index) => {
+                    // 저장해둔 원래 상태로 되돌립니다.
+                    acc.open = originalOpenStates[index];
+                });
+                // --------------------------------------------------
+        
                 hideDynamicLoader();
                 downloadPdfButton.disabled = false;
                 downloadPdfButton.textContent = '📈 리포트 PDF로 저장';
             }
         }
+        // --- [끝] 수정된 PDF 기능 ---
 
 
         // [v2.2] 피드백 텍스트 가독성 개선 헬퍼
