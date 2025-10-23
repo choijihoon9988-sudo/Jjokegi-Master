@@ -2,7 +2,7 @@
         // !!! 중요 !!!: 테스트를 위해 실제 Google AI Studio에서 발급받은 API 키를 "..." 안에 붙여넣으세요.
         const GEMINI_API_KEY = "AIzaSyCVTLte-n_F-83vTq3P1Fc16NzGXdKaIYI"; // ⬅️ 여기에 실제 API 키를 입력하세요.
         const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-        // 만약 키가 없다면, https://aistudio.google.com/app/apikey 에서 생성할 수 있습니다.
+        // 만약 키가 없다면, [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) 에서 생성할 수 있습니다.
         
         // --- [v3.0] S-Class AI Prompts ---
 
@@ -34,7 +34,7 @@
             return `
                 You are an S-Class Senior Marketer at 'Isanghan Marketing', a 'Jjokegi Theory' master. Your task is to act as an S-Class Coach providing a detailed 1:1 code review for a junior marketer's training submission.
                 Your feedback must be mercilessly sharp, logical, and strategic, but ultimately **constructive and motivational**, aimed at fostering rapid **growth**. Do not be polite or vague. Be direct and analytical, **focusing on growth opportunities**.
-                **All output text (summaries, plans, feedback) MUST be in KORAN and contain NO markdown.**
+                **All output text (summaries, plans, feedback) MUST be in KOREAN and contain NO markdown.**
 
                 You will evaluate the user's submitted 'thought process' (user_analysis) for each 'original_chunk' based on 4 S-Class criteria:
                 1.  **[본능/욕망]:** Did the analysis pierce through to the customer's core 'instinct' (fear, desire, LF8)?
@@ -53,9 +53,8 @@
                     * \`summary_improvement_points\`: An array of 2-3 strings (KOREAN) summarizing the biggest weaknesses **of the user's *analyses***. (e.g., "'반박 제거' 논리 분석이 전반적으로 부족함.")
                     * \`personalized_action_plan\`: A single string (KOREAN) proposing a *specific, actionable* next training goal. (Note: This is used for the *deleted* 'action plan' placeholder, but is still useful for the AI's internal logic).
 
-                **Your output MUST be a single, raw JSON object in the following structure. Do not add any other text or markdown.**
+                **Your output MUST be a single, raw JSON object in the following structure. Do not add any other text, markdown, or commentary.**
 
-                \`\`\`json
                 {
                   "score": 0,
                   "summary_good_points": [],
@@ -69,7 +68,6 @@
                     }
                   ]
                 }
-                \`\`\`
 
                 **User's Analyses to evaluate:**
                 ${JSON.stringify(userAnalyses, null, 2)}
