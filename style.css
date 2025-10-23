@@ -82,7 +82,8 @@ header p {
     border-radius: 20px;
     padding: 40px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.08); /* [v4.0] */
-    margin-bottom: 32px;
+    /* [v4.1] 카드 간 여백 확보 */
+    margin-bottom: 40px; 
     /* [v4.0] 피드백 반영: '뒤로 가기' 버튼 위치 기준 */
     position: relative; 
 }
@@ -191,24 +192,25 @@ header p {
 }
 .btn-secondary:hover { background-color: #5a6268; }
 
-/* [v4.0] 피드백 반영: 리포트 섹션 버튼 (PDF 등) 
-   width: 100% 대신, auto + margin으로 중앙 정렬
+/* --- [v4.1] 리포트 섹션 버튼 (CTA 카드 내부) --- */
+/*
+   [v4.1] 기존 auto 너비/중앙 정렬 스타일(line 217-231)을 삭제하고
+   CTA 카드 내부에서 100% 너비를 갖도록 재정의합니다.
 */
+#generate-prompt-button {
+    /* 이 버튼은 기본 .btn (파란색) 스타일을 사용합니다. */
+    /* [v4.1] CTA 카드 내부의 첫 버튼이므로 상단 마진 재정의 */
+    margin-top: 0;
+}
+
 #download-pdf-button, 
-#generate-prompt-button, 
 #reset-button {
-    display: block; /* 블록 요소로 만듦 */
-    width: fit-content; /* 내용물에 맞게 너비 조절 */
-    margin-left: auto; /* 자동 마진으로 중앙 정렬 */
-    margin-right: auto; /* 자동 마진으로 중앙 정렬 */
+    /* 이 버튼들은 .btn-secondary (회색) 스타일을 사용합니다. */
+    /* [v4.1] 두 번째, 세 번째 버튼이므로 상단 마진 16px */
     margin-top: 16px;
-    padding: 16px 32px; /* 좌우 패딩을 넉넉하게 */
-    font-size: 17px;
 }
-/* 첫 번째 버튼(PDF)은 상단 마진을 더 줌 */
-#download-pdf-button {
-    margin-top: 32px;
-}
+/* --- [END v4.1] 리포트 섹션 버튼 --- */
+
 
 .btn:hover { background-color: #3a6cc7; }
 .btn:disabled { background-color: #a0b9e8; cursor: not-allowed; }
@@ -277,12 +279,16 @@ textarea.analysis-input.invalid {
     width: 100%; max-width: 720px; /* [v4.0] */
     padding: 0; box-sizing: border-box;
     animation: fadeIn 0.5s ease-out;
+    /* [v4.1] 리포트 섹션 자체의 하단 마진은 제거 (내부 카드들이 마진을 가짐) */
 }
 
 .report-header {
     text-align: center;
     padding: 48px 32px;
     border-radius: 20px; /* [v4.0] */
+    /* [v4.1] html 구조 변경으로 인해, 점수 카드(헤더)가 요약까지 포함하므로
+       기존 main-card의 기본 하단 마진(40px)을 사용함.
+    */
 }
 .report-header h2 {
     font-size: 24px;
@@ -322,6 +328,18 @@ textarea.analysis-input.invalid {
     margin-right: auto;
     line-height: 1.6;
 }
+
+/* [v4.1] 핵심 요약 카드 내부에 추가된 '훈련 결과 (요약)' h2 */
+.report-summary-title {
+    text-align: center;
+    font-size: 22px; /* h2(28px)보다 약간 작게 */
+    font-weight: 700;
+    margin-top: 48px; /* 점수와 요약 섹션 구분 */
+    margin-bottom: 32px;
+    border: none;
+    padding: 0;
+}
+
 
 #chart-container { display: none; }
 
@@ -363,9 +381,19 @@ textarea.analysis-input.invalid {
     display: inline-block; /* 클릭 영역을 위해 */
 }
 
+/* [v4.1] (원본 보기) 힌트 텍스트 스타일 */
+.view-original-hint {
+    font-weight: 500;
+    font-size: 13px;
+    color: #888;
+    margin-left: 8px;
+    display: inline-block; /* h4 옆에 붙도록 */
+}
+
 /* [추가] 아코디언이 열렸을 때의 스타일 */
 .review-card[open] {
-    background-color: #fcfcfc;
+    /* [v4.1] 헤더와 본문 색상 대비 */
+    background-color: var(--white-color);
 }
 .review-card[open] .review-card-header {
     /* 열렸을 때는 summary와 body 사이에 선이 없도록 함 */
@@ -376,7 +404,8 @@ textarea.analysis-input.invalid {
 .review-card-body {
     padding: 24px;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    /* [v4.1] 가독성을 위해 1단 세로 스택으로 변경 */
+    grid-template-columns: 1fr;
     gap: 24px;
     border-top: 1px solid var(--border-color); /* 헤더와 구분선 */
 }
@@ -424,13 +453,13 @@ textarea.analysis-input.invalid {
     margin-bottom: 0;
 }
 
-/* 피드백 요약 패널 */
+/* [v4.1] 피드백 요약 패널 (이제 .report-header 내부에 위치함) */
 .feedback-details {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
     text-align: left;
-    margin-bottom: 32px;
+    /* [v4.1] html 구조 변경으로 mb 제거 */
 }
 .feedback-panel {
     background-color: var(--light-bg-color);
@@ -596,14 +625,10 @@ footer {
     .review-card-body { grid-template-columns: 1fr; }
     .feedback-details { grid-template-columns: 1fr; }
     
-    /* [v4.0] 리포트 버튼 모바일 (다시 100%로) */
-    #download-pdf-button, 
-    #generate-prompt-button, 
-    #reset-button {
-        width: 100%;
-        padding-left: 16px;
-        padding-right: 16px;
-    }
+    /* [v4.1] 리포트 버튼 모바일 (기존 100% 너비)
+       이제 데스크탑 기본값이 100%이므로, 
+       기존 덮어쓰기(line 622-630)는 삭제되었습니다.
+    */
 
     /* 모달 모바일 */
     .modal-content {

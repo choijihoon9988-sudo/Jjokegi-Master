@@ -441,8 +441,8 @@
                  const rawFeedback = review.specific_feedback;
                  const formattedFeedback = formatFeedbackText(rawFeedback);
                  
-                 // [수정] 헤더 텍스트 생성
-                 const headerText = `📄 훈련 #${index + 1}: ${safeHtml(review.original_chunk.substring(0, 40))}...`;
+                 // [v4.1] 헤더 텍스트 생성 (원본 보기 힌트 추가)
+                 const headerText = `📄 훈련 #${index + 1}: ${safeHtml(review.original_chunk.substring(0, 40))}... <span class="view-original-hint">(원본 보기)</span>`;
 
                  // [수정] <details>와 <summary>를 사용한 아코디언 구조로 변경
                  //         <summary>에 data-full-text와 review-header-clickable 클래스 추가
@@ -481,6 +481,7 @@
                 ? summary_improvement_points.map(p => `<li>${safeHtml(p)}</li>`).join('')
                 : '<li>요약된 보완점이 없습니다.</li>';
 
+             // [v4.1] html 구조 변경으로, 이제 '다음 행동' 카드 내부의 버튼이 항상 표시됨
              generatePromptButton.classList.remove('hidden');
         }
 
@@ -547,6 +548,8 @@
             
             lastFeedback = null;
             originalText = "";
+            
+            // [v4.1] html 구조 변경으로, 'S급 성장' 버튼은 항상 hidden 상태로 리셋
             generatePromptButton.classList.add('hidden');
             
             analysisInputsContainer.innerHTML = '';
@@ -675,24 +678,54 @@
             downloadPdfButton.textContent = '생성 중...';
         
             try {
-                const canvas = await html2canvas(reportSection, {
-                    scale: 2,
-                    useCORS: true,
-                    windowWidth: document.documentElement.scrollWidth,
-                    windowHeight: document.documentElement.scrollHeight
-                });
+                // [v4.1] 리포트 섹션 내부의 모든 main-card를 캡처 대상으로 함
+                const cardsToCapture = reportSection.querySelectorAll('.main-card');
+                const canvases = [];
                 
-                const imgData = canvas.toDataURL('image/png');
-                const imgWidth = canvas.width;
-                const imgHeight = canvas.height;
-
+                for (const card of cardsToCapture) {
+                     const canvas = await html2canvas(card, {
+                        scale: 2,
+                        useCORS: true,
+                        // 개별 카드 기준으로 캡처
+                        windowWidth: card.scrollWidth,
+                        windowHeight: card.scrollHeight
+                    });
+                    canvases.push(canvas);
+                }
+                
                 const pdf = new jsPDF({
-                    orientation: imgWidth > imgHeight ? 'l' : 'p',
+                    orientation: 'p',
                     unit: 'px',
-                    format: [imgWidth, imgHeight]
+                });
+
+                let pdfWidth = pdf.internal.pageSize.getWidth();
+                let yPos = 0;
+                
+                canvases.forEach((canvas, index) => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgWidth = canvas.width;
+                    const imgHeight = canvas.height;
+                    const ratio = imgHeight / imgWidth;
+                    const pdfImgHeight = pdfWidth * ratio;
+
+                    if (index > 0) {
+                         // 카드 사이에 20px 정도의 여백 추가
+                         yPos += 20; 
+                    }
+                    
+                    // 페이지를 넘겨야 하는지 확인 (카드 높이 + 현재 위치 + 하단 여백)
+                    if (yPos + pdfImgHeight > pdf.internal.pageSize.getHeight() - 20) {
+                        pdf.addPage();
+                        yPos = 0;
+                    }
+
+                    // 상단 여백 추가 (첫 페이지 제외)
+                    if (yPos === 0) yPos = 20;
+
+                    pdf.addImage(imgData, 'PNG', 0, yPos, pdfWidth, pdfImgHeight);
+                    yPos += pdfImgHeight;
                 });
         
-                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
                 pdf.save(`Jjokegi_Master_Report_${new Date().toISOString().split('T')[0]}.pdf`);
         
             } catch (error) {
@@ -751,11 +784,12 @@
             const header = e.target.closest('.review-header-clickable');
             if (header) {
                 // <summary>의 기본 동작(아코디언 열기/닫기)이 실행된 *직후* 모달을 연다.
-                // (만약 summary 내부의 h4를 클릭했다면 즉시 실행)
+                // (만약 summary 내부의 h4나 span을 클릭했다면 즉시 실행)
                 setTimeout(() => {
                     // 아코디언이 열리거나 닫히는 동작과 모달이 동시에 뜨는 것을 방지
                     // (사용자가 헤더의 텍스트 영역을 명확히 클릭했을 때만 모달이 뜨도록)
-                    if (e.target.tagName === 'H4' || e.target.tagName === 'SUMMARY') {
+                    // [v4.1] 클릭 타겟으로 .view-original-hint(span) 추가
+                    if (e.target.tagName === 'H4' || e.target.tagName === 'SUMMARY' || e.target.classList.contains('view-original-hint')) {
                          // data-full-text 속성에서 원본 텍스트를 가져옴
                         const fullText = header.dataset.fullText;
                         if (fullText) {
