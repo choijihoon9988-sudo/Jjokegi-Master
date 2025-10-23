@@ -662,11 +662,14 @@
 
                 Your sole mission is to evaluate the user's submitted 'thought process' for each text chunk based on the quality and depth of their strategic reasoning.
 
-                Evaluate the user's collective analysis based on the following S-Class criteria:
-                1.  **Instinct Analysis (본능 분석):** Depth of identifying audience's core instincts, fears, desires (LF8).
-                2.  **Rebuttal Removal (반박 제거):** Clarity of identifying objections and the logic of removal.
-                3.  **Psychological Principles (심리학적 원리):** Correct identification and intentional application of principles.
-                4.  **Customer Success (고객 성공):** Contribution to customer's transformation (Giver mindset).
+                **[START OF MODIFICATION]**
+                **특히 다음 기준을 중점적으로 평가하세요:**
+
+                1.  **[본능 분석]** 사용자의 분석이 고객의 핵심적인 '본능(두려움, 욕망, LF8)'을 정확히 포착했는가?
+                2.  **[반박 제거]** 해당 문장이 고객의 예상 '반박'을 얼마나 효과적으로 선제 제거하거나 해소하는 논리를 가졌는가?
+                3.  **[고객 성공 기여도]** 사용자의 분석이, 해당 문장이 **궁극적인 '고객 성공'(예: 신뢰 형성, 다음 단계로의 행동 유도, 구매 결정 촉진 등)**에 어떻게 기여하는지를 명확히 설명하고 있는가? (단순히 기술적 분석에 그치지 않고, 최종 목표와의 연결성을 평가)
+                4.  **[심리학/가치 증명]** 사용된 심리학적 원리나 가치 증명 방식이 명확하고 설득력 있는가?
+                **[END OF MODIFICATION]**
 
                 Provide your response in a strict JSON format with five keys:
                 1.  "score": An integer from 0 to 100 representing the overall quality of the user's thought process.
