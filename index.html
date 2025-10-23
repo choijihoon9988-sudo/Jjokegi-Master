@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쪼개기 마스터 v3.0 (Closed Loop)</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="style.css"> </head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>쪼개기 마스터</h1>
+            <p>매일 쪼개며 훈련하고, 본질을 꿰뚫는 마스터가 되세요.</p>
+        </header>
+
+        <div id="error-banner" class="hidden">
+            <p id="error-message">오류가 발생했습니다.</p>
+            <button id="error-close" type="button" aria-label="닫기">&times;</button>
+        </div>
+
+        <div id="dynamic-loader" class="main-card hidden">
+            <div class="spinner"></div>
+            <p id="loader-text">분석 중입니다...</p>
+        </div>
+
+        <div class="main-card" id="input-section">
+            <h2>1. 훈련할 텍스트 입력</h2>
+            <textarea id="text-input" placeholder="훈련하고 싶은 블로그 글, 영상 대본, 카피 등을 여기에 붙여넣으세요. (50자 이상)"></textarea>
+            <div id="char-counter">0 / 50자</div>
+
+            <h2 style="margin-top: 32px;">2. 훈련 코스 선택</h2>
+            <div class="course-options">
+                <div class="course-option" data-course="quick">
+                    <h3>Quick Course</h3>
+                    <p>핵심 의미 5개 쪼개기<br>(전략적 핵심 점검)</p>
+                </div>
+                <div class="course-option" data-course="medium">
+                    <h3>Medium Course</h3>
+                    <p>주요 의미 10개 쪼개기<br>(핵심 논리 집중 훈련)</p>
+                </div>
+                <div class="course-option" data-course="full">
+                    <h3>Full Course</h3>
+                    <p>전체 텍스트 쪼개기<br>(심층 집중 훈련)</p>
+                </div>
+            </div>
+
+            <button id="start-split-button" class="btn" disabled>쪼개기 훈련 시작</button>
+        </div>
+
+        <div id="analysis-section" class="hidden">
+            <h2>S-Class: 집중 훈련</h2>
+            <p id="progress-indicator">0 / 0 항목 훈련 중</p>
+            <div id="analysis-inputs"></div>
+            <button id="next-chunk-button" class="btn">다음 ➔</button>
+        </div>
+
+        <div id="feedback-report-section" class="hidden">
+            <div class="main-card report-header">
+                <h2>📊 성장 리포트</h2>
+                 <div id="feedback-score-container">
+                    <p id="feedback-score-label">분석 정확도</p>
+                    <div id="feedback-score"></div>
+                    <p id="feedback-summary"></p>
+                 </div>
+            </div>
+
+            <div class="main-card" style="margin-top: 32px;">
+                <h2 style="text-align: center; margin-bottom: 8px;">S-Class: 1:1 상세 코칭</h2>
+                <p style="text-align: center; margin-top: -8px; margin-bottom: 32px; font-size: 16px; color: #666;">
+                    AI 코치가 당신의 훈련을 1:1로 코칭합니다.
+                </p>
+                <div id="detailed-review-container">
+                    </div>
+            </div>
+
+             <div class="main-card">
+                 <h2 style="text-align: center;">📈 훈련 결과 (요약)</h2>
+                 
+                 <div class="feedback-details">
+                    <div class="feedback-panel" id="good-points-panel">
+                        <h3>강점</h3>
+                        <ul id="good-points-list"></ul>
+                    </div>
+                    <div class="feedback-panel" id="improvement-points-panel">
+                        <h3>보완점</h3>
+                        <ul id="improvement-points-list"></ul>
+                    </div>
+                 </div>
+            </div>
+
+            <div class="action-plan-section">
+                 <h3>🎯 가장 중요한 한 가지 (My Next Step)</h3>
+                 <p>이번 훈련에서 얻은 가장 중요한 한 가지 교훈은 무엇인가요?</p>
+                 <input type="text" id="action-plan-input" placeholder="AI의 제안 또는 나의 생각을 140자 내로 요약..." maxlength="140">
+                 <div id="action-plan-counter">0 / 140자</div>
+             </div>
+
+             <div class="self-coaching-section">
+                 <h3>🤔 성장을 위한 성찰</h3>
+                 <h4 id="socratic-question"></h4>
+                 <textarea id="self-coaching-input" placeholder="나의 생각을 정리해보세요..."></textarea>
+             </div>
+             
+             <button id="download-pdf-button" class="btn btn-secondary">📈 리포트 PDF로 저장</button>
+             
+             <button id="generate-prompt-button" class="btn hidden">🚀 S급 성장 처방받기 (프롬프트 복사)</button>
+
+             <button id="reset-button" class="btn btn-secondary">새로운 훈련 시작하기</button>
+        </div>
+
+    </div> 
+    
+    <footer>
+        <p>© 2025 Jjokegi Master. 이상한마케팅 구성원 분들을 위해 제작되었습니다.</p>
+    </footer>
+
+    <script src="script.js"></script> </body>
+</html>
