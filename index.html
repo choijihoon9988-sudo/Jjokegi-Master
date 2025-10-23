@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>쪼개기 마스터 v3.1 (Feedback Applied)</title>
+    <title>쪼개기 마스터 v4.0</title>
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -28,11 +28,15 @@
         </div>
 
         <div class="main-card" id="input-section">
-            <h2>1. 훈련할 텍스트 입력</h2>
+            <h2 class="step-title">✍️<br>훈련할 텍스트를 붙여넣어 주세요.</h2>
             <textarea id="text-input" placeholder="훈련하고 싶은 블로그 글, 영상 대본, 카피 등을 여기에 붙여넣으세요. (50자 이상)"></textarea>
             <div id="char-counter">0 / 50자</div>
+            <button id="next-to-course-button" class="btn" disabled>다음 ➔</button>
+        </div>
 
-            <h2 style="margin-top: 32px;">2. 훈련 코스 선택</h2>
+        <div class="main-card hidden" id="course-section">
+            <button id="back-to-input-button" class="btn-back" type="button" aria-label="뒤로 가기">←</button>
+            <h2 class="step-title">🎯<br>훈련 코스를<br>선택해 주세요.</h2>
             <div class="course-options">
                 <div class="course-option" data-course="quick">
                     <h3>Quick Course</h3>
@@ -47,7 +51,6 @@
                     <p>전체 텍스트 쪼개기<br>(심층 집중 훈련)</p>
                 </div>
             </div>
-
             <button id="start-split-button" class="btn" disabled>쪼개기 훈련 시작</button>
         </div>
 

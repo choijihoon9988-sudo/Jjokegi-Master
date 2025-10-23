@@ -129,8 +129,9 @@
         // --- [END v3.0] S-Class AI Prompts ---
 
 
-        // --- DOM Elements ---
+        // --- [v4.0] DOM Elements (단계별 UI 반영) ---
         const inputSection = document.getElementById('input-section');
+        const courseSection = document.getElementById('course-section'); // [v4.0] NEW
         const analysisSection = document.getElementById('analysis-section');
         const feedbackReportSection = document.getElementById('feedback-report-section');
         
@@ -142,116 +143,71 @@
 
         const textInput = document.getElementById('text-input');
         const charCounter = document.getElementById('char-counter');
+        const nextToCourseButton = document.getElementById('next-to-course-button'); // [v4.0] NEW
+        const backToInputButton = document.getElementById('back-to-input-button'); // [v4.0] NEW
+
         const courseOptionsContainer = document.querySelector('.course-options');
         const courseOptions = document.querySelectorAll('.course-option');
         const startSplitButton = document.getElementById('start-split-button');
         
-        // [v2.0] 훈련 섹션 요소
         const analysisInputsContainer = document.getElementById('analysis-inputs');
         const progressIndicator = document.getElementById('progress-indicator');
-        const nextChunkButton = document.getElementById('next-chunk-button'); // v2.0 버튼 ID 변경
+        const nextChunkButton = document.getElementById('next-chunk-button');
         
         const resetButton = document.getElementById('reset-button');
-        const downloadPdfButton = document.getElementById('download-pdf-button'); // [v2.2]
-        const generatePromptButton = document.getElementById('generate-prompt-button'); // [v3.0]
+        const downloadPdfButton = document.getElementById('download-pdf-button');
+        const generatePromptButton = document.getElementById('generate-prompt-button');
 
-        // [v2.1] 피드백 리포트 요소 (업데이트)
         const feedbackScoreEl = document.getElementById('feedback-score');
         const feedbackSummaryEl = document.getElementById('feedback-summary');
-        const detailedReviewContainer = document.getElementById('detailed-review-container'); // [NEW]
-        const goodPointsList = document.getElementById('good-points-list'); // (요약)
-        const improvementPointsList = document.getElementById('improvement-points-list'); // (요약)
+        const detailedReviewContainer = document.getElementById('detailed-review-container');
+        const goodPointsList = document.getElementById('good-points-list');
+        const improvementPointsList = document.getElementById('improvement-points-list');
         
-        /*
-        // [사용자 피드백 반영] v2.1 아이디어 6: 소크라테스식 질문 배열 (제거됨)
-        const socraticQuestions = [
-            "이번 훈련에서 드러난 나의 고질적인 '생각의 패턴'은 무엇이었나?",
-            "다음 훈련에서 의식적으로 다르게 시도해 볼 단 한 가지는 무엇인가?",
-            "오늘 받은 1:1 코칭 중 가장 뼈아픈(핵심적인) 피드백은 무엇인가?",
-            "이 피드백을 내일 작성할 OOO 콘텐츠에 어떻게 적용할 수 있을까?"
-        ];
-        */
-
         // --- [v3.0] 전역 상태 변수 업데이트 ---
         let selectedCourse = null;
         let originalChunks = [];
-        let userAnalyses = []; // [v2.0] 사용자의 모든 분석을 저장
-        let currentChunkIndex = 0; // [v2.0] 현재 훈련 중인 청크 인덱스
+        let userAnalyses = [];
+        let currentChunkIndex = 0;
         let loaderInterval = null;
-        let lastFeedback = null; // [v3.0] 마지막 피드백 저장
-        let originalText = ""; // [v3.0] 원본 텍스트 저장
+        let lastFeedback = null;
+        let originalText = "";
 
-        // --- Event Listeners ---
+        // --- [v4.0] Event Listeners (단계별 UI 반영) ---
         textInput.addEventListener('input', () => {
             updateButtonState();
             updateCharCounter();
         });
         errorClose.addEventListener('click', () => errorBanner.classList.add('hidden'));
 
+        // [v4.0] 1단계 -> 2단계 이동
+        nextToCourseButton.addEventListener('click', () => {
+            inputSection.classList.add('hidden');
+            courseSection.classList.remove('hidden');
+            window.scrollTo(0, 0);
+        });
+
+        // [v4.0] 2단계 -> 1단계 이동
+        backToInputButton.addEventListener('click', () => {
+            courseSection.classList.add('hidden');
+            inputSection.classList.remove('hidden');
+            window.scrollTo(0, 0);
+        });
+
         courseOptions.forEach(option => {
             option.addEventListener('click', () => {
                 courseOptions.forEach(o => o.classList.remove('selected'));
                 option.classList.add('selected');
                 selectedCourse = option.dataset.course;
-                updateButtonState();
+                updateButtonState(); // [v4.0] 2단계 버튼 상태 업데이트
             });
         });
 
         startSplitButton.addEventListener('click', handleStartSplit);
-        nextChunkButton.addEventListener('click', handleNextChunk); // [v2.0]
+        nextChunkButton.addEventListener('click', handleNextChunk);
         resetButton.addEventListener('click', resetUI);
-        downloadPdfButton.addEventListener('click', handleDownloadPDF); // [v2.2]
-        generatePromptButton.addEventListener('click', handleGeneratePrompt); // [v3.0]
-
-        /*
-        // [사용자 피드백 반영] v2.1 아이디어 4: '가장 중요한 한 가지' 글자 수 카운터 (제거됨)
-        document.addEventListener('input', function(e) {
-            if (e.target.id === 'action-plan-input') {
-                const length = e.target.value.length;
-                const counter = document.getElementById('action-plan-counter');
-                if (counter) {
-                    counter.textContent = `${length} / 140자`;
-                }
-            }
-        });
-        */
-
-        /*
-        // [사용자 피드백 반영] v2.1 아이디어 5: '피드백-실천' 연결 (이벤트 위임) (제거됨)
-        detailedReviewContainer.addEventListener('click', function(e) {
-            // 클릭된 요소 또는 그 부모가 .btn-use-as-lesson인지 확인
-            const button = e.target.closest('.btn-use-as-lesson');
-            if (button) {
-                const feedbackText = button.dataset.feedbackText;
-                const actionPlanInput = document.getElementById('action-plan-input');
-                
-                let lessonText = feedbackText;
-                if (lessonText.startsWith('Critique: ')) {
-                    lessonText = lessonText.substring('Critique: '.length);
-                }
-
-                actionPlanInput.value = lessonText.substring(0, 140); // Max length
-                actionPlanInput.focus();
-                
-                // 카운터 업데이트
-                const counter = document.getElementById('action-plan-counter');
-                if (counter) {
-                    counter.textContent = `${actionPlanInput.value.length} / 140자`;
-                }
-                
-                // [v2.1] 아이디어 5.3: 시각적 피드백 (깜빡임)
-                actionPlanInput.style.transition = 'none';
-                actionPlanInput.style.backgroundColor = '#f0f3ff'; // 연한 파란색
-                setTimeout(() => {
-                    actionPlanInput.style.transition = 'background-color 0.3s ease';
-                    actionPlanInput.style.backgroundColor = 'var(--white-color)';
-                }, 150);
-                
-                // 해당 인풋으로 스크롤
-                actionPlanInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        });
-        */
+        downloadPdfButton.addEventListener('click', handleDownloadPDF);
+        generatePromptButton.addEventListener('click', handleGeneratePrompt);
 
 
         // --- Core Functions ---
@@ -268,8 +224,14 @@
             charCounter.classList.toggle('sufficient', length >= 50);
         }
 
+        // [v4.0] 버튼 상태 업데이트 (단계별)
         function updateButtonState() {
-            startSplitButton.disabled = !(textInput.value.trim().length >= 50 && selectedCourse);
+            // 1단계 (텍스트 입력) 버튼
+            const isTextSufficient = textInput.value.trim().length >= 50;
+            nextToCourseButton.disabled = !isTextSufficient;
+
+            // 2단계 (코스 선택) 버튼
+            startSplitButton.disabled = !(isTextSufficient && selectedCourse);
         }
 
         function showDynamicLoader(messages = ["처리 중입니다..."]) {
@@ -292,6 +254,7 @@
         // [v2.0] 훈련 시작 (쪼개기)
         async function handleStartSplit() {
             const text = textInput.value.trim();
+            // [v4.0] 유효성 검사는 1, 2단계에서 이미 처리되었지만, 방어 코드 유지
             if (text.length < 50) {
                  showError("훈련할 텍스트를 50자 이상 입력하세요.");
                  return;
@@ -301,11 +264,12 @@
                 return;
             }
 
-            originalText = text; // [v3.0] 원본 텍스트 저장
+            originalText = text;
 
             startSplitButton.disabled = true;
             startSplitButton.textContent = 'AI가 쪼개는 중...';
-            inputSection.classList.add('hidden');
+            // [v4.0] 2단계(코스 선택) 섹션을 숨김
+            courseSection.classList.add('hidden'); 
             showDynamicLoader([
                 "AI가 텍스트를 분석 중입니다...",
                 "최소 의미 단위로 쪼개고 있습니다...",
@@ -317,16 +281,17 @@
                 // [v3.0] S급 '해부학자' 프롬프트 호출
                 const chunks = await callGeminiApi(SPLIT_PROMPT(text, selectedCourse));
                 originalChunks = chunks;
-                userAnalyses = new Array(chunks.length).fill(null); // 분석 저장 배열 초기화
-                currentChunkIndex = 0; // 0번부터 시작
+                userAnalyses = new Array(chunks.length).fill(null);
+                currentChunkIndex = 0;
                 
-                displayCurrentChunk(); // 첫 번째 훈련 카드 표시
+                displayCurrentChunk();
                 
-                analysisSection.classList.remove('hidden'); // 포커스 모드 섹션 표시
+                analysisSection.classList.remove('hidden');
             } catch (error) {
                 console.error('Error splitting text:', error);
                 showError(`텍스트를 쪼개는 중 오류가 발생했습니다: ${error.message}`);
-                inputSection.classList.remove('hidden');
+                // [v4.0] 실패 시 2단계(코스 선택) 섹션으로 복귀
+                courseSection.classList.remove('hidden');
             } finally {
                 startSplitButton.disabled = false;
                 startSplitButton.textContent = '쪼개기 훈련 시작';
@@ -336,10 +301,10 @@
 
         // [v2.0] 현재 훈련 청크 표시 (포커스 모드 UI)
         function displayCurrentChunk() {
-            if (currentChunkIndex >= originalChunks.length) return; // 범위 초과 방지
+            if (currentChunkIndex >= originalChunks.length) return;
 
             const chunk = originalChunks[currentChunkIndex];
-            const savedAnalysis = userAnalyses[currentChunkIndex]?.user_analysis || ''; // 이전에 저장된 값 로드
+            const savedAnalysis = userAnalyses[currentChunkIndex]?.user_analysis || '';
             const safeChunk = safeHtml(chunk);
 
             analysisInputsContainer.innerHTML = `
@@ -355,15 +320,11 @@
                 </div>
             `;
             
-            // 진행률 표시
             progressIndicator.textContent = `${currentChunkIndex + 1} / ${originalChunks.length} 항목 훈련 중`;
 
-            // 버튼 텍스트 변경
             if (currentChunkIndex === originalChunks.length - 1) {
-                // [v2.1] 아이디어 10: 언어 수정
                 nextChunkButton.textContent = '결과 리포트 보기';
             } else {
-                // [v2.1] 아이디어 10: 언어 수정
                 nextChunkButton.textContent = '다음 ➔';
             }
         }
@@ -373,47 +334,39 @@
             const currentTextarea = analysisInputsContainer.querySelector('.analysis-input');
             const analysisText = currentTextarea.value.trim();
             
-            // 현재 분석 내용 저장
             userAnalyses[currentChunkIndex] = {
                 original_chunk: originalChunks[currentChunkIndex],
-                user_analysis: analysisText // 빈 값도 그대로 저장
+                user_analysis: analysisText
             };
 
-            // 유효성 검사 (v1.2와 동일하게 유지, 빨간 테두리)
             currentTextarea.classList.remove('invalid');
             if (!analysisText) {
                 currentTextarea.classList.add('invalid');
                 showError('사고 분석을 입력해주세요.');
-                return; // 다음으로 넘어가지 않음
+                return;
             }
-            errorBanner.classList.add('hidden'); // 성공 시 오류 숨김
+            errorBanner.classList.add('hidden');
 
 
-            // 다음 단계로 이동
             if (currentChunkIndex < originalChunks.length - 1) {
                 currentChunkIndex++;
                 displayCurrentChunk();
-                window.scrollTo(0, 0); // 새 카드 표시 시 상단으로
+                window.scrollTo(0, 0);
             } else {
-                // 마지막 훈련이었습니다. 피드백 받기 실행
                 handleGetFeedback();
             }
         }
 
-        // [v2.0] 피드백 받기 (데이터는 이미 userAnalyses에 있음)
+        // [v2.0] 피드백 받기
         async function handleGetFeedback() {
-            // v2.0: userAnalyses 배열은 이미 최신 상태임.
-            // 모든 항목이 채워졌는지 마지막으로 확인 (handleNextChunk에서 이미 했지만 방어 코드)
             const allFilled = userAnalyses.every(analysis => analysis && analysis.user_analysis.trim().length > 0);
             
             if (!allFilled) {
                 showError('모든 사고 분석을 입력해주세요. 누락된 항목이 있습니다.');
-                // 누락된 항목으로 되돌아가는 로직 (선택 사항)
                 const firstEmptyIndex = userAnalyses.findIndex(a => !a || !a.user_analysis.trim());
                 if(firstEmptyIndex !== -1) {
                     currentChunkIndex = firstEmptyIndex;
                     displayCurrentChunk();
-                    // 해당 입력창에 invalid 표시
                     setTimeout(() => {
                          const textarea = analysisInputsContainer.querySelector('.analysis-input');
                          if(textarea) textarea.classList.add('invalid');
@@ -433,10 +386,9 @@
             errorBanner.classList.add('hidden');
 
             try {
-                // [v3.0] S급 '코치' 프롬프트 호출
                 const feedback = await callGeminiApi(FEEDBACK_PROMPT(userAnalyses));
-                lastFeedback = feedback; // [v3.0] 피드백 전역 변수에 저장
-                displayFeedbackReport(feedback); // v2.1: 새로운 리포트 표시 함수
+                lastFeedback = feedback;
+                displayFeedbackReport(feedback);
                 feedbackReportSection.classList.remove('hidden');
                 window.scrollTo(0, 0);
             } catch (error) {
@@ -445,7 +397,6 @@
                 analysisSection.classList.remove('hidden');
             } finally {
                 nextChunkButton.disabled = false;
-                // [v2.2] FIX: 로더가 사라지지 않는 버그 수정
                 hideDynamicLoader();
             }
         }
@@ -459,23 +410,19 @@
                 return;
             }
 
-            // v2.0: 새로운 JSON 구조에서 데이터 추출
             const {
                 score = 0,
                 summary_good_points = [],
                 summary_improvement_points = [],
-                personalized_action_plan = '다음 훈련에서 보완점을 개선해보세요.', // [v2.1] (현재 UI에서 사용되진 않음)
+                personalized_action_plan = '다음 훈련에서 보완점을 개선해보세요.',
                 detailed_review = []
              } = feedback;
 
-            // 1. 점수 및 총평 요약
             let scoreClass = 'score-c';
             if (score >= 85) scoreClass = 'score-s';
             else if (score >= 60) scoreClass = 'score-a';
             else if (score >= 40) scoreClass = 'score-b';
 
-            // [v2.1] 아이디어 2: 동기부여 요약문으로 변경
-            // [사용자 피드백 반영] '75%' 고정값 대신 유동적인 문구로 수정
             let summary = '괜찮습니다. 모든 마스터도 이 단계에서 시작했습니다. 1:1 코칭을 성장의 발판으로 삼으세요.';
             if (score >= 85) summary = '압도적인 분석입니다! S-Class의 본질을 꿰뚫고 있습니다.';
             else if (score >= 60) summary = '좋은 시도입니다. 핵심을 상당히 파악하셨군요. 나머지를 함께 다듬어볼까요?';
@@ -485,19 +432,17 @@
             feedbackScoreEl.className = scoreClass;
             feedbackSummaryEl.textContent = safeHtml(summary);
 
-             // 3. [NEW] 1:1 상세 코칭 리스트 생성
-             detailedReviewContainer.innerHTML = ''; // 컨테이너 비우기
+             detailedReviewContainer.innerHTML = '';
              detailed_review.forEach((review, index) => {
                  const analysisHtml = review.user_analysis
                     ? `<p>${safeHtml(review.user_analysis)}</p>`
                     : `<p class="empty-analysis">분석을 입력하지 않았습니다.</p>`;
                  
-                 // [v2.2] 가독성 개선
                  const rawFeedback = review.specific_feedback;
-                 const formattedFeedback = formatFeedbackText(rawFeedback); // 포맷팅 함수 사용
+                 // [v4.0] 피드백 반영: formatFeedbackText 함수를 사용하여 [키워드] 강조
+                 const formattedFeedback = formatFeedbackText(rawFeedback);
 
-                 // [사용자 피드백 반영] 헤더 형식을 샵(#) 대신 이모티콘과 훈련 번호로 변경
-                 // [사용자 피드백 반영] 'btn-use-as-lesson' 버튼 제거
+                 // [v4.0] 피드백 반영: 헤더에 이모티콘 및 요약 텍스트 사용 (기존 로직 유지)
                  const cardHtml = `
                     <div class="review-card">
                         <div class="review-card-header">
@@ -519,7 +464,6 @@
              });
 
 
-            // 4. (요약) 상세 피드백 목록 표시
             goodPointsList.innerHTML = summary_good_points.length > 0
                 ? summary_good_points.map(p => `<li>${safeHtml(p)}</li>`).join('')
                 : '<li>요약된 강점이 없습니다.</li>';
@@ -528,22 +472,6 @@
                 ? summary_improvement_points.map(p => `<li>${safeHtml(p)}</li>`).join('')
                 : '<li>요약된 보완점이 없습니다.</li>';
 
-             /*
-             // [사용자 피드백 반영] v2.1 아이디어 4: 액션 플랜 (제거됨)
-             const actionPlanInput = document.getElementById('action-plan-input');
-             if(actionPlanInput) {
-                actionPlanInput.placeholder = safeHtml(personalized_action_plan);
-             }
-             
-             // [사용자 피드백 반영] v2.1 아이디어 6: 소크라테스식 질문 설정 (제거됨)
-             const questionEl = document.getElementById('socratic-question');
-             if (questionEl) {
-                 const randomIndex = Math.floor(Math.random() * socraticQuestions.length);
-                 questionEl.textContent = socraticQuestions[randomIndex];
-             }
-             */
-             
-             // 7. [v3.0] S급 성장 처방 버튼 표시
              generatePromptButton.classList.remove('hidden');
         }
 
@@ -555,14 +483,12 @@
                 return;
             }
 
-            // 1. [v3.0] S급 '개인 교사' 프롬프트 생성
             const promptText = GROWTH_PROMPT(
                 originalText,
                 JSON.stringify(userAnalyses, null, 2),
                 JSON.stringify(lastFeedback, null, 2)
             );
 
-            // 2. 클립보드에 복사 (iFrame 호환)
             const tempTextarea = document.createElement('textarea');
             tempTextarea.value = promptText;
             document.body.appendChild(tempTextarea);
@@ -570,25 +496,20 @@
             
             try {
                 document.execCommand('copy');
-                // [v3.0] 성공 메시지 표시
                 showError("✅ S급 성장 프롬프트가 클립보드에 복사되었습니다. AI 챗봇에 붙여넣으세요!");
-                // 성공 배너 스타일 적용
                 errorBanner.style.backgroundColor = 'var(--success-color)';
                 errorBanner.style.boxShadow = '0 4px 12px rgba(40, 167, 69, 0.3)';
             } catch (err) {
                 console.error('Failed to copy prompt:', err);
                 showError("프롬프트 복사에 실패했습니다. 수동으로 복사해주세요.");
-                // 실패 시 기본 오류 배너 스타일 유지
                 errorBanner.style.backgroundColor = 'var(--danger-color)';
                 errorBanner.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.3)';
             } finally {
                 document.body.removeChild(tempTextarea);
                 
-                // 3초 후에 배너 스타일 초기화
                 setTimeout(() => {
                     errorBanner.style.backgroundColor = 'var(--danger-color)';
                     errorBanner.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.3)';
-                    // 메시지가 성공 메시지였다면 닫기
                     if (errorMessage.textContent.includes("복사되었습니다")) {
                         errorBanner.classList.add('hidden');
                     }
@@ -597,9 +518,11 @@
         }
 
 
-        // --- [v2.1] Reset UI Function (v3.0 변수 초기화 추가) ---
+        // --- [v4.0] Reset UI Function (단계별 UI 반영) ---
          function resetUI() {
+            // [v4.0] 1단계(입력) 섹션만 표시
             inputSection.classList.remove('hidden');
+            courseSection.classList.add('hidden'); // [v4.0] NEW
             analysisSection.classList.add('hidden');
             feedbackReportSection.classList.add('hidden');
             errorBanner.classList.add('hidden');
@@ -609,34 +532,23 @@
             courseOptions.forEach(o => o.classList.remove('selected'));
             selectedCourse = null;
             
-            // v2.0: 전역 상태 초기화
             originalChunks = [];
             userAnalyses = [];
             currentChunkIndex = 0;
             
-            // [v3.0] 전역 상태 초기화 추가
             lastFeedback = null;
             originalText = "";
             generatePromptButton.classList.add('hidden');
             
-            analysisInputsContainer.innerHTML = ''; // 훈련 카드 제거
-            detailedReviewContainer.innerHTML = ''; // v2.0: 상세 리뷰 제거
+            analysisInputsContainer.innerHTML = '';
+            detailedReviewContainer.innerHTML = '';
             
-            /*
-            // [사용자 피드백 반영] v2.1 아이디어 4, 6: 입력 필드 초기화 (제거됨)
-            const actionPlanInput = document.getElementById('action-plan-input');
-            if(actionPlanInput) actionPlanInput.value = '';
-            const selfCoachingInput = document.getElementById('self-coaching-input');
-            if(selfCoachingInput) selfCoachingInput.value = '';
-            const actionPlanCounter = document.getElementById('action-plan-counter');
-            if(actionPlanCounter) actionPlanCounter.textContent = '0 / 140자';
-            */
-
             progressIndicator.textContent = '';
-            nextChunkButton.textContent = '다음 ➔'; // v2.1: 버튼 텍스트 초기화
-            nextChunkButton.disabled = false; // v2.0: 버튼 활성화
+            nextChunkButton.textContent = '다음 ➔';
+            nextChunkButton.disabled = false;
 
-            startSplitButton.disabled = true;
+            // [v4.0] 1단계, 2단계 버튼 상태 초기화
+            updateButtonState();
             updateCharCounter();
             
             window.scrollTo(0, 0);
@@ -646,9 +558,7 @@
         async function callGeminiApi(prompt) {
             console.log("Sending prompt to API:", prompt);
 
-            // API 키 유효성 검사
             if (GEMINI_API_KEY === "AIzaSyCVTLte-n_F-83vTq3P1Fc16NzGXdKaIYI") {
-                // NOTE: This is a placeholder key. The original key was kept as requested by the prompt.
                 if (GEMINI_API_KEY.includes("YOUR_") || GEMINI_API_KEY.length < 30) {
                      showError("API 키가 설정되지 않았습니다. 스크립트 상단의 'GEMINI_API_KEY' 변수를 수정해주세요.");
                      throw new Error("API Key not set.");
@@ -706,20 +616,16 @@
                          throw new Error("AI로부터 유효한 응답 구조를 받지 못했습니다.");
                     }
 
-                    // --- [오류 수정 시작] ---
-                    let jsonString = data.candidates[0].content.parts[0].text; // const를 let으로 변경
+                    let jsonString = data.candidates[0].content.parts[0].text;
 
                     try {
-                        // [오류 수정] AI 응답에서 순수 JSON만 추출 (```json ... ``` 같은 마크다운 제거)
                         const jsonMatch = jsonString.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
                         if (jsonMatch && jsonMatch[0]) {
                             jsonString = jsonMatch[0];
                         }
-                        // [수정 끝]
 
                         const parsedResult = JSON.parse(jsonString);
                         
-                        // v3.0: 피드백 프롬프트는 'detailed_review' 키를 포함한 객체여야 함
                          if (prompt.includes('S-Class Coach') && (typeof parsedResult !== 'object' || parsedResult === null || !parsedResult.detailed_review)) {
                              console.error("Feedback prompt did not return a valid object with 'detailed_review':", parsedResult);
                              throw new Error("AI가 피드백 결과를 객체 형식(detailed_review 포함)으로 반환하지 않았습니다.");
@@ -727,17 +633,14 @@
                         return parsedResult;
                     } catch (parseError) {
                         console.error("Failed to parse JSON response (cleaned):", jsonString, parseError);
-                        // [오류 수정] 디버깅을 위해 정제 전 원본 AI 응답도 로깅
                         console.error("Original AI response (pre-cleaning):", data.candidates[0].content.parts[0].text); 
                         throw new Error("AI가 유효한 JSON 형식을 반환하지 않았습니다.");
                     }
-                    // --- [오류 수정 끝] ---
 
                 } catch (error) {
                     console.error("API Error during fetch or processing:", error);
                      if (retries >= maxRetries) throw error;
                     if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('API Key not set')) {
-                        // API 키 미설정 시 재시도 중지
                         if (error.message.includes('API Key not set')) throw error;
 
                         retries++;
@@ -758,15 +661,13 @@
             const { jsPDF } = window.jspdf;
             const reportSection = document.getElementById('feedback-report-section');
             
-            // 로더 표시 (다운로드 중)
             showDynamicLoader(["리포트를 PDF로 생성 중입니다..."]);
             downloadPdfButton.disabled = true;
             downloadPdfButton.textContent = '생성 중...';
         
             try {
-                // html2canvas로 리포트 섹션 캡처
                 const canvas = await html2canvas(reportSection, {
-                    scale: 2, // 고해상도 캡처
+                    scale: 2,
                     useCORS: true,
                     windowWidth: document.documentElement.scrollWidth,
                     windowHeight: document.documentElement.scrollHeight
@@ -776,24 +677,19 @@
                 const imgWidth = canvas.width;
                 const imgHeight = canvas.height;
 
-                // PDF 페이지 크기를 L캔버스 크기에 맞춤
                 const pdf = new jsPDF({
-                    orientation: imgWidth > imgHeight ? 'l' : 'p', // 'landscape' or 'portrait'
+                    orientation: imgWidth > imgHeight ? 'l' : 'p',
                     unit: 'px',
                     format: [imgWidth, imgHeight]
                 });
         
-                // PDF에 이미지 추가
                 pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-                
-                // 파일 저장
                 pdf.save(`Jjokegi_Master_Report_${new Date().toISOString().split('T')[0]}.pdf`);
         
             } catch (error) {
                 console.error('Error generating PDF:', error);
                 showError('PDF 생성 중 오류가 발생했습니다: ' + error.message);
             } finally {
-                // 로더 숨기기
                 hideDynamicLoader();
                 downloadPdfButton.disabled = false;
                 downloadPdfButton.textContent = '📈 리포트 PDF로 저장';
@@ -807,7 +703,11 @@
             // 1. 텍스트를 먼저 안전하게 이스케이프 처리합니다.
             let safeText = safeHtml(text);
             
-            // 2. 이스케이프된 텍스트에서 [키워드] 패턴을 찾아 HTML 태그로 교체합니다.
+            // 2. [v4.0] 피드백 반영: `**` 마크다운을 <strong>으로 변환
+            // (참고: 이 기능은 원래 피드백에서 오해였지만, AI가 가끔 `**`를 쓸 수 있으므로 추가하면 좋음)
+            // safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // [v4.0] 피드백 반영: [대괄호] 키워드를 찾아 HTML 태그로 교체 (기존 로직 유지)
             //    정규식: 대괄호([)로 시작하고, 대괄호(])가 아닌 모든 문자(+)가 뒤따르고, 대괄호(])로 끝나는 패턴
             safeText = safeText.replace(/\[([^\]]+)\]/g, '<br><strong>[$1]</strong>');
             
@@ -821,7 +721,6 @@
 
         // Helper function for safe HTML display
         function safeHtml(text) {
-          // [v2.1] 아이디어 5: data- 속성에 들어갈 텍스트는 따옴표도 이스케이프 처리
           if (typeof text !== 'string') return '';
           return text.replace(/&/g, "&amp;")
                      .replace(/</g, "&lt;")
@@ -832,3 +731,4 @@
 
         // 초기 로드
         updateCharCounter();
+        updateButtonState(); // [v4.0] 1단계, 2단계 버튼 상태 모두 초기화
