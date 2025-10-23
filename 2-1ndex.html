@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>쪼개기 마스터 v2.1 (S-Class Polished)</title>
+    <title>쪼개기 마스터 v2.2 (Report Polished)</title>
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         /* --- [v2.1] 아이디어 9: '숨 쉴 공간' 및 타이포그래피 원칙 적용 --- */
         :root {
@@ -145,9 +146,19 @@
             font-size: 18px; font-weight: 700; cursor: pointer;
             transition: background-color 0.2s ease; box-sizing: border-box;
         }
-       /* [v2.1] 아이디어 8: btn-secondary 스타일 제거 (또는 재정의) */
-       /* .btn-secondary { background-color: #6c757d; margin-top: 32px; } */
-       /* .btn-secondary:hover { background-color: #5a6268; } */
+       
+       /* [v2.2] PDF 다운로드 버튼을 위한 2순위 버튼 스타일 */
+       .btn-secondary { 
+            background-color: #6c757d; 
+            margin-top: 32px; 
+        } 
+       .btn-secondary:hover { background-color: #5a6268; }
+       
+       /* [v2.2] '새 훈련' 버튼과의 간격 조정 */
+       #reset-button {
+           margin-top: 16px;
+       }
+       
        .btn:hover { background-color: #3a6cc7; }
        .btn:disabled { background-color: #a0b9e8; cursor: not-allowed; }
 
@@ -347,6 +358,20 @@
             color: #888;
             font-style: italic;
         }
+
+        /* [v2.2] 피드백 가독성 향상 */
+        .coach-feedback-box p strong {
+            color: var(--primary-color);
+            font-weight: 700;
+            display: inline-block;
+            margin-top: 8px;
+            margin-bottom: 2px;
+            font-size: 15px;
+        }
+        .coach-feedback-box p strong:first-of-type {
+            margin-top: 0;
+        }
+
 
         /* [v2.1] 아이디어 5: '피드백-실천' 연결 버튼 */
         .btn-use-as-lesson {
@@ -645,6 +670,8 @@
                  <h4 id="socratic-question"></h4>
                  <textarea id="self-coaching-input" placeholder="나의 생각을 정리해보세요..."></textarea>
              </div>
+             
+             <button id="download-pdf-button" class="btn btn-secondary">📈 리포트 PDF로 저장</button>
 
              <button id="reset-button" class="btn">새로운 훈련 시작하기</button>
         </div>
@@ -681,7 +708,7 @@
             return `${coreInstruction}\n\n${modeInstruction}\n\n${outputInstruction}\n\nText to analyze:\n"""${text}"""\n\nOutput only the JSON array.`;
         };
 
-        // --- [v2.1] S-Class 피드백 프롬프트 (아이디어 2, 10: 동기부여/성장 언어 적용) ---
+        // --- [v2.2] S-Class 피드백 프롬프트 (피드백 3번 항목 반영) ---
         const FEEDBACK_PROMPT = (userAnalyses) => {
             return `
                 You are an S-Class Senior Marketer at 'Isanghan Marketing', a 'Jjokegi Theory' master. Your task is to act as an S-Class Coach providing a detailed 1:1 code review for a junior marketer's training submission.
@@ -701,9 +728,9 @@
 
                 4.  After reviewing all items, generate the overall summary:
                     * \`score\`: An overall integer score (0-100) based on the quality of all analyses.
-                    * \`summary_good_points\`: An array of 2-3 strings (KOREAN) summarizing the user's main strengths **in a constructive tone**.
-                    * \`summary_improvement_points\`: An array of 2-3 strings (KOREAN) summarizing the user's biggest weaknesses **in a constructive tone**.
-                    * \`personalized_action_plan\`: A single string (KOREAN) proposing a *specific, actionable, and motivational* next training goal based on the biggest weakness. (This will be used as a placeholder in the UI).
+                    * \`summary_good_points\`: An array of 2-3 strings (KOREAN) summarizing the main strengths **of the user's *analyses* (사고 분석)**. **Do NOT evaluate the original text itself.**
+                    * \`summary_improvement_points\`: An array of 2-3 strings (KOREAN) summarizing the biggest weaknesses **of the user's *analyses* (사고 분석)**. **Do NOT evaluate the original text itself.**
+                    * \`personalized_action_plan\`: A single string (KOREAN) proposing a *specific, actionable, and motivational* next training goal based on the biggest weakness **in the user's analyses**. (This will be used as a placeholder in the UI).
 
                 **Your output MUST be a single, raw JSON object in the following structure. Do not add any other text or markdown.**
 
@@ -727,7 +754,7 @@
                 ${JSON.stringify(userAnalyses, null, 2)}
             `;
         };
-        // --- [END v2.1] S-Class AI Prompts ---
+        // --- [END v2.2] S-Class AI Prompts ---
 
 
         // --- DOM Elements ---
@@ -753,6 +780,7 @@
         const nextChunkButton = document.getElementById('next-chunk-button'); // v2.0 버튼 ID 변경
         
         const resetButton = document.getElementById('reset-button');
+        const downloadPdfButton = document.getElementById('download-pdf-button'); // [v2.2]
 
         // [v2.1] 피드백 리포트 요소 (업데이트)
         const feedbackScoreEl = document.getElementById('feedback-score');
@@ -798,6 +826,7 @@
         startSplitButton.addEventListener('click', handleStartSplit);
         nextChunkButton.addEventListener('click', handleNextChunk); // [v2.0]
         resetButton.addEventListener('click', resetUI);
+        downloadPdfButton.addEventListener('click', handleDownloadPDF); // [v2.2]
 
         // [v2.1] 아이디어 4: '가장 중요한 한 가지' 글자 수 카운터
         document.addEventListener('input', function(e) {
@@ -1025,7 +1054,7 @@
             errorBanner.classList.add('hidden');
 
             try {
-                // v2.1: 새로운 S-Class 프롬프트 호출
+                // v2.2: 새로운 S-Class 프롬프트 호출
                 const feedback = await callGeminiApi(FEEDBACK_PROMPT(userAnalyses));
                 displayFeedbackReport(feedback); // v2.1: 새로운 리포트 표시 함수
                 feedbackReportSection.classList.remove('hidden');
@@ -1036,7 +1065,8 @@
                 analysisSection.classList.remove('hidden');
             } finally {
                 nextChunkButton.disabled = false;
-                // 버튼 텍스트는 displayCurrentChunk 또는 resetUI에서 관리
+                // [v2.2] FIX: 로더가 사라지지 않는 버그 수정
+                hideDynamicLoader();
             }
         }
 
@@ -1084,8 +1114,9 @@
                     ? `<p>${safeHtml(review.user_analysis)}</p>`
                     : `<p class="empty-analysis">분석을 입력하지 않았습니다.</p>`;
                  
-                 // [v2.1] 아이디어 5: 피드백 텍스트를 data- 속성으로 안전하게 전달
-                 const safeFeedback = safeHtml(review.specific_feedback);
+                 // [v2.2] 가독성 개선
+                 const rawFeedback = review.specific_feedback;
+                 const formattedFeedback = formatFeedbackText(rawFeedback); // 포맷팅 함수 사용
 
                  const cardHtml = `
                     <div class="review-card">
@@ -1099,9 +1130,7 @@
                             </div>
                             <div class="coach-feedback-box">
                                 <h5>S-Class 코칭</h5>
-                                <p>${safeFeedback}</p>
-                                <button class="btn-use-as-lesson" data-feedback-text="${safeFeedback}">
-                                    + 이 교훈을 나의 'Next Step'으로 삼기
+                                <p>${formattedFeedback}</p> <button class="btn-use-as-lesson" data-feedback-text="${safeHtml(rawFeedback)}"> + 이 교훈을 나의 'Next Step'으로 삼기
                                 </button>
                             </div>
                         </div>
@@ -1184,10 +1213,9 @@
 
             // API 키 유효성 검사
             if (GEMINI_API_KEY === "AIzaSyCVTLte-n_F-83vTq3P1Fc16NzGXdKaIYI") {
-                showError("API 키가 설정되지 않았습니다. 스크립트 상단의 'GEMINI_API_KEY' 변수를 수정해주세요.");
                 // NOTE: This is a placeholder key. The original key was kept as requested by the prompt.
-                // If this key is the literal placeholder "YOUR_GEMINI_API_KEY", throw error.
                 if (GEMINI_API_KEY.includes("YOUR_") || GEMINI_API_KEY.length < 30) {
+                     showError("API 키가 설정되지 않았습니다. 스크립트 상단의 'GEMINI_API_KEY' 변수를 수정해주세요.");
                      throw new Error("API Key not set.");
                 }
             }
@@ -1277,6 +1305,72 @@
              }
              throw new Error(`API 호출이 ${maxRetries}번의 재시도 후에도 실패했습니다.`);
         }
+
+        // [v2.2] PDF 다운로드 기능
+        async function handleDownloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const reportSection = document.getElementById('feedback-report-section');
+            
+            // 로더 표시 (다운로드 중)
+            showDynamicLoader(["리포트를 PDF로 생성 중입니다..."]);
+            downloadPdfButton.disabled = true;
+            downloadPdfButton.textContent = '생성 중...';
+        
+            try {
+                // html2canvas로 리포트 섹션 캡처
+                const canvas = await html2canvas(reportSection, {
+                    scale: 2, // 고해상도 캡처
+                    useCORS: true,
+                    windowWidth: document.documentElement.scrollWidth,
+                    windowHeight: document.documentElement.scrollHeight
+                });
+                
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+
+                // PDF 페이지 크기를 캔버스 크기에 맞춤
+                const pdf = new jsPDF({
+                    orientation: imgWidth > imgHeight ? 'l' : 'p', // 'landscape' or 'portrait'
+                    unit: 'px',
+                    format: [imgWidth, imgHeight]
+                });
+        
+                // PDF에 이미지 추가
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                
+                // 파일 저장
+                pdf.save(`Jjokegi_Master_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                showError('PDF 생성 중 오류가 발생했습니다: ' + error.message);
+            } finally {
+                // 로더 숨기기
+                hideDynamicLoader();
+                downloadPdfButton.disabled = false;
+                downloadPdfButton.textContent = '📈 리포트 PDF로 저장';
+            }
+        }
+
+
+        // [v2.2] 피드백 텍스트 가독성 개선 헬퍼
+        function formatFeedbackText(text) {
+            if (!text) return '';
+            // 1. 텍스트를 먼저 안전하게 이스케이프 처리합니다.
+            let safeText = safeHtml(text);
+            
+            // 2. 이스케이프된 텍스트에서 [키워드] 패턴을 찾아 HTML 태그로 교체합니다.
+            //    정규식: 대괄호([)로 시작하고, 대괄호(])가 아닌 모든 문자(+)가 뒤따르고, 대괄호(])로 끝나는 패턴
+            safeText = safeText.replace(/\[([^\]]+)\]/g, '<br><strong>[$1]</strong>');
+            
+            // 3. 만약 텍스트가 <br>로 시작한다면 제거합니다.
+            if (safeText.startsWith('<br>')) {
+                safeText = safeText.substring(4);
+            }
+            return safeText;
+        }
+
 
         // Helper function for safe HTML display
         function safeHtml(text) {
