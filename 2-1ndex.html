@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>쪼개기 마스터 v2.2 (Report Polished)</title>
+    <!-- v3.0: 버전명 업데이트 -->
+    <title>쪼개기 마스터 v3.0 (Closed Loop)</title>
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -78,6 +79,7 @@
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease; /* [v3.0] 성공 메시지 전환 효과 */
         }
         #error-message { font-weight: 600; margin: 0; }
         #error-close {
@@ -154,9 +156,13 @@
         } 
        .btn-secondary:hover { background-color: #5a6268; }
        
-       /* [v2.2] '새 훈련' 버튼과의 간격 조정 */
-       #reset-button {
+       /* [v3.0] 버튼 간격 일관성 적용 */
+       #download-pdf-button, #generate-prompt-button, #reset-button {
            margin-top: 16px;
+       }
+       /* [v3.0] 다운로드 버튼은 첫번째 버튼이므로 v2.2의 32px 유지 */
+       #download-pdf-button {
+           margin-top: 32px;
        }
        
        .btn:hover { background-color: #3a6cc7; }
@@ -672,8 +678,12 @@
              </div>
              
              <button id="download-pdf-button" class="btn btn-secondary">📈 리포트 PDF로 저장</button>
+             
+             <!-- [v3.0] S급 성장 처방받기 버튼 추가 -->
+             <button id="generate-prompt-button" class="btn hidden">🚀 S급 성장 처방받기 (프롬프트 복사)</button>
 
-             <button id="reset-button" class="btn">새로운 훈련 시작하기</button>
+             <!-- [v3.0] 새로운 훈련 버튼을 secondary로 변경 -->
+             <button id="reset-button" class="btn btn-secondary">새로운 훈련 시작하기</button>
         </div>
 
     </div> 
@@ -689,48 +699,54 @@
         const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         // 만약 키가 없다면, https://aistudio.google.com/app/apikey 에서 생성할 수 있습니다.
         
-        // --- [v2.0] S-Class AI Prompts ---
+        // --- [v3.0] S-Class AI Prompts ---
 
-        // 쪼개기 프롬프트 (v1.2와 동일, 이미 S급)
+        // --- 1. '해부학자' 프롬프트 (SPLIT_PROMPT v3.0) ---
         const SPLIT_PROMPT = (text, mode) => {
             const coreInstruction = `
-                You are an expert in Jacheong's 'Jjokegi Theory'. Your task is to analyze the *entire* text provided below to find the 'Minimum Viable Meaning Units' (최소 의미 단위) that a master marketer would identify.
-                A 'Minimum Viable Meaning Unit' is an individual claim, psychological hook, setup/payoff pair, problem-solution statement, or distinct persuasive argument. A single sentence may contain multiple meaning units.
+                You are 'The Scalpel', a master marketer and the author of 'Jjokegi Theory'. Your task is to dissect the provided text from a strategic marketing perspective.
+                Your mission is to deconstruct the text into its 'Minimum Viable Meaning Units' (전략적 최소 의미 단위).
+                A 'Meaning Unit' is NOT a simple sentence. It is a strategic chunk that serves one of the following purposes:
+                - A psychological hook that targets a customer's core instinct or desire (e.g., LF8).
+                - A sentence or phrase that proactively eliminates an anticipated customer rebuttal (반박 제거).
+                - A problem-solution pair (문제 제기 및 해결책 암시).
+                - A clear contrast or conflict (대립 구도).
+                - A specific detail (visual, auditory) designed to evoke anxiety or curiosity.
             `;
 
             const modeInstruction = mode === 'quick'
                ? "After analyzing the *entire* text, extract *only* the 5 *most strategically important* meaning units from anywhere in the text. Do not just take the first 5."
                : (mode === 'medium'
                     ? "After analyzing the *entire* text, extract *only* the 10 *most strategically important* meaning units from anywhere in the text. Do not just take the first 10."
-                    : "Deconstruct the *entire* text into *all* its meaning units, in the order they appear.");
+                    : "Deconstruct the *entire* text into *all* its strategic meaning units, in the order they appear.");
 
             const outputInstruction = "Your output MUST be a JSON array of strings, with no other text, commentary, or explanation.";
             return `${coreInstruction}\n\n${modeInstruction}\n\n${outputInstruction}\n\nText to analyze:\n"""${text}"""\n\nOutput only the JSON array.`;
         };
 
-        // --- [v2.2] S-Class 피드백 프롬프트 (피드백 3번 항목 반영) ---
+        // --- 2. 'S급 코치' 프롬프트 (FEEDBACK_PROMPT v3.0) ---
         const FEEDBACK_PROMPT = (userAnalyses) => {
             return `
                 You are an S-Class Senior Marketer at 'Isanghan Marketing', a 'Jjokegi Theory' master. Your task is to act as an S-Class Coach providing a detailed 1:1 code review for a junior marketer's training submission.
                 Your feedback must be mercilessly sharp, logical, and strategic, but ultimately **constructive and motivational**, aimed at fostering rapid **growth**. Do not be polite or vague. Be direct and analytical, **focusing on growth opportunities**.
-                **All output text (summaries, plans, feedback) MUST be in KOREAN and contain NO markdown.**
+                **All output text (summaries, plans, feedback) MUST be in KORAN and contain NO markdown.**
 
-                You will evaluate the user's submitted 'thought process' (user_analysis) for each 'original_chunk'.
+                You will evaluate the user's submitted 'thought process' (user_analysis) for each 'original_chunk' based on 4 S-Class criteria:
+                1.  **[본능/욕망]:** Did the analysis pierce through to the customer's core 'instinct' (fear, desire, LF8)?
+                2.  **[반박 제거]:** Did the analysis clearly define the customer's 'core rebuttal' and logically analyze how the text neutralizes it?
+                3.  **[전략적 의도]:** Did the analysis identify the 'strategic intent' (e.g., Barnum effect, framing, authority) or just the superficial meaning?
+                4.  **[고객 성공]:** Did the analysis connect this chunk to the ultimate goal of 'customer success' (conversion, sales)?
 
                 **Your process:**
-                1.  Iterate through the *entire* \`userAnalyses\` array (which contains ${userAnalyses.length} items).
-                2.  For **EACH** item, you MUST generate a \`specific_feedback\` string in KOREAN.
-                3.  This \`specific_feedback\` MUST evaluate the user's analysis based on these S-Class criteria:
-                    * **[본능/반박]** 고객의 핵심 '본능(두려움, 욕망, LF8)'을 꿰뚫었는가? 예상 '반박'을 날카롭게 제거했는가?
-                    * **[심리/전략]** 사용된 심리학적 원리나 마케팅 전략(가치 증명, 프레이밍 등)이 명확하고 의도적인가?
-                    * **[고객 성공]** 이 분석이 궁극적인 '고객 성공' 및 '매출'에 어떻게 기여하는지 연결했는가?
-                    * **[개선점]** (가장 중요) 이 분석이 왜 부족한지, 또는 더 날카롭게 분석했다면 어땠을지 '개선할 점(Improvement)'을 **반드시** 포함해라. (예: "Critique: ...분석만 있고, ...심리 연결이 빠졌음.")
-
+                1.  Iterate through the *entire* \`userAnalyses\` array.
+                2.  For **EACH** item, generate a \`specific_feedback\` string in KOREAN, using the 4 S-Class criteria.
+                3.  This feedback **MUST** use the keywords \`[강점]\` and \`[개선점]\` to be compatible with the UI.
+                    (e.g., "[강점] '본능'을 언급한 점은 좋습니다. [개선점] 하지만 '어떤' 본능인지, '왜' 자극하는지 분석이 빠졌습니다. 더 쪼개십시오.")
                 4.  After reviewing all items, generate the overall summary:
-                    * \`score\`: An overall integer score (0-100) based on the quality of all analyses.
-                    * \`summary_good_points\`: An array of 2-3 strings (KOREAN) summarizing the main strengths **of the user's *analyses* (사고 분석)**. **Do NOT evaluate the original text itself.**
-                    * \`summary_improvement_points\`: An array of 2-3 strings (KOREAN) summarizing the biggest weaknesses **of the user's *analyses* (사고 분석)**. **Do NOT evaluate the original text itself.**
-                    * \`personalized_action_plan\`: A single string (KOREAN) proposing a *specific, actionable, and motivational* next training goal based on the biggest weakness **in the user's analyses**. (This will be used as a placeholder in the UI).
+                    * \`score\`: An overall integer score (0-100) based on the 4 criteria.
+                    * \`summary_good_points\`: An array of 2-3 strings (KOREAN) summarizing the main strengths **of the user's *analyses***.
+                    * \`summary_improvement_points\`: An array of 2-3 strings (KOREAN) summarizing the biggest weaknesses **of the user's *analyses***. (e.g., "'반박 제거' 논리 분석이 전반적으로 부족함.")
+                    * \`personalized_action_plan\`: A single string (KOREAN) proposing a *specific, actionable* next training goal.
 
                 **Your output MUST be a single, raw JSON object in the following structure. Do not add any other text or markdown.**
 
@@ -754,7 +770,58 @@
                 ${JSON.stringify(userAnalyses, null, 2)}
             `;
         };
-        // --- [END v2.2] S-Class AI Prompts ---
+        
+        // --- 3. '개인 교사' 프롬프트 (GROWTH_PROMPT v1.0) ---
+        const GROWTH_PROMPT = (originalText, analysesJSON, feedbackJSON) => {
+            return `
+                You are a 'Master Coach', the world's top marketing strategist who prescribes personalized growth plans.
+
+                **Student Data:**
+                You will analyze the following data from a student's 'Jjokegi' training session.
+                
+                1. [Student's Original Text]:
+                """${originalText}"""
+
+                2. [Student's Thought Analysis (JSON)]:
+                ${analysesJSON}
+
+                3. [S-Class Coach's 1st Feedback (JSON)]:
+                ${feedbackJSON}
+
+                **Your Task (in KOREAN):**
+                Your task is to act as a 'Personal Teacher' and provide a personalized prescription for this student's growth.
+
+                1.  **Diagnose the "One Thing":** Based on all 3 data points (especially the 'summary_improvement_points' in the feedback), diagnose the *single most critical weakness* this student has.
+                2.  **Prescribe the "One Theory":** Select the *single most important theory* or *marketing principle* the student must master to fix this weakness.
+                3.  **Write a "Personalized Textbook" (3,000-5,000 words):**
+                    Write a comprehensive, personalized textbook for this student in KOREAN. It MUST follow this structure:
+
+                    ---
+                    **[서문: 당신을 위한 진단서]**
+                    내가 당신의 훈련 데이터 3가지를 모두 분석한 결과, 당신의 가장 치명적인 약점은 '{약점}'입니다.
+                    이 문제를 해결하기 위해, 당신에게는 '{이론}'의 체화가 필요합니다.
+                    이 처방전은 오직 당신만을 위해 작성되었습니다.
+
+                    **[1챕터: '{이론}'의 정의와 본질]**
+                    - 이 이론의 핵심 정의를 한 문장으로 내리십시오.
+                    - 이 이론을 40자 내외의 비유로 설명하십시오.
+                    - 이 이론이 왜 S급 마케터에게 필수적인지 그 이유를 설명하십시오.
+
+                    **[2챕터: 당신의 분석이 실패한 이유 (사례 분석)]**
+                    - 학생의 '사고 분석'({analysesJSON})에서 부족한 부분을 *직접 인용*하십시오.
+                    - '{이론}'의 관점에서 이 분석이 왜 S급이 아닌지, 왜 본질을 놓쳤는지 신랄하게 해부하십시오.
+                    - S급 코치의 피드백({feedbackJSON})을 근거로 이 분석의 문제점을 재확인시키십시오.
+
+                    **[3챕터: S급 마케터는 이렇게 적용한다 (모범 답안)]**
+                    - 학생의 '원본 텍스트'({originalText})를 이 '{이론}'에 맞춰 다시 분석하십시오.
+                    - "나라면 이 텍스트를 이렇게 쪼개고, 이렇게 분석했을 것이다"라는 S급 모범 답안을 3-5개의 핵심 유닛에 대해 제시하십시오.
+
+                    **[4챕터: 당신을 위한 다음 훈련 계획 (Action Plan)]**
+                    - 이 '{이론}'을 당신의 '무의식적인 무기'로 만들기 위해, 다음 훈련에서 의식적으로 시도해야 할 '단 하나의 실천 과제'를 제시하십시오.
+                    ---
+            `;
+        };
+        // --- [END v3.0] S-Class AI Prompts ---
 
 
         // --- DOM Elements ---
@@ -781,15 +848,14 @@
         
         const resetButton = document.getElementById('reset-button');
         const downloadPdfButton = document.getElementById('download-pdf-button'); // [v2.2]
+        const generatePromptButton = document.getElementById('generate-prompt-button'); // [v3.0]
 
         // [v2.1] 피드백 리포트 요소 (업데이트)
         const feedbackScoreEl = document.getElementById('feedback-score');
         const feedbackSummaryEl = document.getElementById('feedback-summary');
-        // const feedbackChartCanvas = document.getElementById('feedback-radar-chart'); // [DELETED]
         const detailedReviewContainer = document.getElementById('detailed-review-container'); // [NEW]
         const goodPointsList = document.getElementById('good-points-list'); // (요약)
         const improvementPointsList = document.getElementById('improvement-points-list'); // (요약)
-        // const actionPlanText = document.getElementById('action-plan-text'); // [v2.1] (DELETED)
         
         // [v2.1] 아이디어 6: 소크라테스식 질문 배열
         const socraticQuestions = [
@@ -799,13 +865,14 @@
             "이 피드백을 내일 작성할 OOO 콘텐츠에 어떻게 적용할 수 있을까?"
         ];
 
-        // --- [v2.0] 전역 상태 변수 ---
+        // --- [v3.0] 전역 상태 변수 업데이트 ---
         let selectedCourse = null;
         let originalChunks = [];
         let userAnalyses = []; // [v2.0] 사용자의 모든 분석을 저장
         let currentChunkIndex = 0; // [v2.0] 현재 훈련 중인 청크 인덱스
-        // let feedbackChart = null; // [DELETED]
         let loaderInterval = null;
+        let lastFeedback = null; // [v3.0] 마지막 피드백 저장
+        let originalText = ""; // [v3.0] 원본 텍스트 저장
 
         // --- Event Listeners ---
         textInput.addEventListener('input', () => {
@@ -827,6 +894,7 @@
         nextChunkButton.addEventListener('click', handleNextChunk); // [v2.0]
         resetButton.addEventListener('click', resetUI);
         downloadPdfButton.addEventListener('click', handleDownloadPDF); // [v2.2]
+        generatePromptButton.addEventListener('click', handleGeneratePrompt); // [v3.0]
 
         // [v2.1] 아이디어 4: '가장 중요한 한 가지' 글자 수 카운터
         document.addEventListener('input', function(e) {
@@ -847,10 +915,7 @@
                 const feedbackText = button.dataset.feedbackText;
                 const actionPlanInput = document.getElementById('action-plan-input');
                 
-                // [v2.1] 아이디어 5.3: 피드백 텍스트에서 핵심만 추출 (간단한 버전)
-                // "Critique: " 또는 "지적: "으로 시작하는 부분을 잘라낼 수 있으나, 우선 원본을 그대로 넣습니다.
                 let lessonText = feedbackText;
-                // 예시: "Critique: "로 시작하면 그 부분 제거
                 if (lessonText.startsWith('Critique: ')) {
                     lessonText = lessonText.substring('Critique: '.length);
                 }
@@ -925,6 +990,8 @@
                 return;
             }
 
+            originalText = text; // [v3.0] 원본 텍스트 저장
+
             startSplitButton.disabled = true;
             startSplitButton.textContent = 'AI가 쪼개는 중...';
             inputSection.classList.add('hidden');
@@ -936,6 +1003,7 @@
             errorBanner.classList.add('hidden');
 
             try {
+                // [v3.0] S급 '해부학자' 프롬프트 호출
                 const chunks = await callGeminiApi(SPLIT_PROMPT(text, selectedCourse));
                 originalChunks = chunks;
                 userAnalyses = new Array(chunks.length).fill(null); // 분석 저장 배열 초기화
@@ -1054,8 +1122,9 @@
             errorBanner.classList.add('hidden');
 
             try {
-                // v2.2: 새로운 S-Class 프롬프트 호출
+                // [v3.0] S급 '코치' 프롬프트 호출
                 const feedback = await callGeminiApi(FEEDBACK_PROMPT(userAnalyses));
+                lastFeedback = feedback; // [v3.0] 피드백 전역 변수에 저장
                 displayFeedbackReport(feedback); // v2.1: 새로운 리포트 표시 함수
                 feedbackReportSection.classList.remove('hidden');
                 window.scrollTo(0, 0);
@@ -1070,7 +1139,7 @@
             }
         }
 
-        // --- [v2.1] Display Feedback Report (아이디어 1, 2, 4, 5, 6 적용) ---
+        // --- [v2.1] Display Feedback Report (v3.0 버튼 표시 로직 추가) ---
          function displayFeedbackReport(feedback) {
             if (typeof feedback !== 'object' || feedback === null || !feedback.detailed_review) {
                 console.error("Invalid feedback format:", feedback);
@@ -1103,9 +1172,6 @@
             feedbackScoreEl.textContent = `${score}점`;
             feedbackScoreEl.className = scoreClass;
             feedbackSummaryEl.textContent = safeHtml(summary);
-
-             // 2. [DELETED] 레이더 차트
-             // renderRadarChart(criteria_scores);
 
              // 3. [NEW] 1:1 상세 코칭 리스트 생성
              detailedReviewContainer.innerHTML = ''; // 컨테이너 비우기
@@ -1161,14 +1227,62 @@
                  const randomIndex = Math.floor(Math.random() * socraticQuestions.length);
                  questionEl.textContent = socraticQuestions[randomIndex];
              }
+             
+             // 7. [v3.0] S급 성장 처방 버튼 표시
+             generatePromptButton.classList.remove('hidden');
         }
 
-        // --- [DELETED v2.0] Render Radar Chart ---
-        /*
-        function renderRadarChart(scores) { ... }
-        */
 
-        // --- [v2.1] Reset UI Function (업데이트) ---
+        // --- [v3.0] S급 성장 프롬프트 생성 (신규 함수) ---
+        function handleGeneratePrompt() {
+            if (!lastFeedback || !originalText || !userAnalyses) {
+                showError("데이터가 없습니다. 훈련을 먼저 완료해주세요.");
+                return;
+            }
+
+            // 1. [v3.0] S급 '개인 교사' 프롬프트 생성
+            const promptText = GROWTH_PROMPT(
+                originalText,
+                JSON.stringify(userAnalyses, null, 2),
+                JSON.stringify(lastFeedback, null, 2)
+            );
+
+            // 2. 클립보드에 복사 (iFrame 호환)
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = promptText;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            
+            try {
+                document.execCommand('copy');
+                // [v3.0] 성공 메시지 표시
+                showError("✅ S급 성장 프롬프트가 클립보드에 복사되었습니다. AI 챗봇에 붙여넣으세요!");
+                // 성공 배너 스타일 적용
+                errorBanner.style.backgroundColor = 'var(--success-color)';
+                errorBanner.style.boxShadow = '0 4px 12px rgba(40, 167, 69, 0.3)';
+            } catch (err) {
+                console.error('Failed to copy prompt:', err);
+                showError("프롬프트 복사에 실패했습니다. 수동으로 복사해주세요.");
+                // 실패 시 기본 오류 배너 스타일 유지
+                errorBanner.style.backgroundColor = 'var(--danger-color)';
+                errorBanner.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.3)';
+            } finally {
+                document.body.removeChild(tempTextarea);
+                
+                // 3초 후에 배너 스타일 초기화
+                setTimeout(() => {
+                    errorBanner.style.backgroundColor = 'var(--danger-color)';
+                    errorBanner.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.3)';
+                    // 메시지가 성공 메시지였다면 닫기
+                    if (errorMessage.textContent.includes("복사되었습니다")) {
+                        errorBanner.classList.add('hidden');
+                    }
+                }, 3000);
+            }
+        }
+
+
+        // --- [v2.1] Reset UI Function (v3.0 변수 초기화 추가) ---
          function resetUI() {
             inputSection.classList.remove('hidden');
             analysisSection.classList.add('hidden');
@@ -1184,6 +1298,11 @@
             originalChunks = [];
             userAnalyses = [];
             currentChunkIndex = 0;
+            
+            // [v3.0] 전역 상태 초기화 추가
+            lastFeedback = null;
+            originalText = "";
+            generatePromptButton.classList.add('hidden');
             
             analysisInputsContainer.innerHTML = ''; // 훈련 카드 제거
             detailedReviewContainer.innerHTML = ''; // v2.0: 상세 리뷰 제거
@@ -1275,7 +1394,7 @@
 
                     try {
                         const parsedResult = JSON.parse(jsonString);
-                        // v2.0: 피드백 프롬프트는 'detailed_review' 키를 포함한 객체여야 함
+                        // v3.0: 피드백 프롬프트는 'detailed_review' 키를 포함한 객체여야 함
                          if (prompt.includes('S-Class Coach') && (typeof parsedResult !== 'object' || parsedResult === null || !parsedResult.detailed_review)) {
                              console.error("Feedback prompt did not return a valid object with 'detailed_review':", parsedResult);
                              throw new Error("AI가 피드백 결과를 객체 형식(detailed_review 포함)으로 반환하지 않았습니다.");
