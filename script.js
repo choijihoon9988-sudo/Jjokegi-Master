@@ -1,4 +1,4 @@
-// choijihoon9988-sudo/jjokegi-master/Jjokegi-Master-ebba4f8f23fc12869857a54b94d24b5d336477b8/script.js
+// choijihoon9988-sudo/jjokegi-master/Jjokegi-Master-9476ee9aa0b5faefd51ff59927133e26c8850901/script.js
 // --- AI CONFIGURATION ---
         // !!! 중요 !!!: 테스트를 위해 실제 Google AI Studio에서 발급받은 API 키를 "..." 안에 붙여넣으세요.
         const GEMINI_API_KEY = "AIzaSyCVTLte-n_F-83vTq3P1Fc16NzGXdKaIYI"; // ⬅️ 여기에 실제 API 키를 입력하세요.
@@ -667,7 +667,7 @@
              throw new Error(`API 호출이 ${maxRetries}번의 재시도 후에도 실패했습니다.`);
         }
 
-        // --- [수정된 v4.5] PDF 다운로드 기능 (3개 리스트 영역 분할 캡처) ---
+        // --- [수정된 v4.6] PDF 다운로드 기능 (DOM 참조 오류 수정) ---
         async function handleDownloadPDF() {
             const { jsPDF } = window.jspdf;
             const reportSection = document.getElementById('feedback-report-section');
@@ -679,25 +679,20 @@
             downloadPdfButton.disabled = true;
             downloadPdfButton.textContent = '생성 중...';
         
-            // [개선 1] 아코디언의 원래 'open' 상태를 저장합니다.
+            // [개선 1] 아코디언의 원래 'open' 상태를 저장하고 강제 열기
             const originalOpenStates = [];
             accordions.forEach((acc, index) => {
                 originalOpenStates[index] = acc.open;
+                acc.open = true; 
             });
         
             try {
-                // --- [개선 1] 캡처 전 모든 아코디언 강제 열기 ---
-                accordions.forEach(acc => {
-                    acc.open = true; // 모든 아코디언을 엽니다.
-                });
-                // ---------------------------------------------
-                
                 // DOM이 업데이트(아코디언 열림)된 후 캡처를 위해 잠시 대기 (안정성 강화)
                 await new Promise(resolve => setTimeout(resolve, 300)); // 300ms로 증가
                 
                 const canvases = [];
                 
-                // V4.5에 필요한 요소 참조
+                // V4.6에 필요한 요소 참조
                 const reportHeader = reportSection.querySelector('.main-card.report-header');
                 const reportSummaryTitle = reportHeader.querySelector('.report-summary-title');
                 const feedbackDetails = reportHeader.querySelector('.feedback-details');
@@ -708,15 +703,22 @@
                 const detailedReviewTitleCard = reportSection.querySelectorAll('.main-card')[1];
                 const reviewContainer = document.getElementById('detailed-review-container');
 
+                // --- V4.6: 복구 지점 및 요소 참조 저장 ---
+                // 이 변수들은 Node 객체 자체를 참조합니다.
+                const originalReportSummaryTitleNextSibling = reportSummaryTitle.nextSibling;
+                const originalFeedbackDetailsNextSibling = feedbackDetails.nextSibling;
+                
+                const originalGoodPointsParent = goodPointsPanel.parentNode; // feedbackDetails
+                const originalImprovementPointsNextSibling = improvementPointsPanel.nextSibling;
+                // --- V4.6: 저장 끝 ---
+
+
                 // --- V4.5: 3개 영역 분할 캡처 시작 ---
-                // DOM 조작 전, 원본 요소들의 부모를 저장
-                const originalFeedbackDetailsParent = feedbackDetails.parentNode;
-                const originalGoodPointsParent = goodPointsPanel.parentNode;
                 
                 // 1. Score/Summary Section 캡처 (Page 1)
-                // 임시로 리스트 영역을 부모(reportHeader)에서 분리 (HTML 흐름상 DOM 이동)
-                const originalReportSummaryTitle = reportSummaryTitle.remove();
-                const originalFeedbackDetails = feedbackDetails.remove();
+                // 리스트 영역을 부모(reportHeader)에서 분리 (remove()의 반환값을 저장하지 않음)
+                reportSummaryTitle.remove();
+                feedbackDetails.remove();
                 
                 await new Promise(resolve => setTimeout(resolve, 50)); // DOM 변경 적용 대기
 
@@ -730,6 +732,9 @@
 
                 // 2. 강점 (Good Points) 섹션 캡처 (Page 2)
                 
+                // 보완점 패널을 피드백 디테일에서 제거 (이동 준비)
+                improvementPointsPanel.remove(); // remove()의 반환값을 저장하지 않음
+                
                 // 임시 래퍼를 생성하여 제목과 강점 패널을 포함
                 const tempGoodPointsWrapper = document.createElement('div');
                 // 래퍼 스타일을 main-card와 유사하게 설정 (캡처 시 일관된 여백/스타일 유지)
@@ -740,19 +745,17 @@
                 tempGoodPointsWrapper.style.marginBottom = '40px';
                 
                 // 제목 클론 및 텍스트 수정
-                const titleGood = reportSummaryTitle.cloneNode(true);
-                titleGood.textContent = '📈 훈련 결과 (요약) - 강점'; // 명확한 제목
-                titleGood.style.textAlign = 'left'; // 제목 스타일 조정
+                const titleGood = reportSummaryTitle.cloneNode(true); 
+                titleGood.textContent = '📈 훈련 결과 (요약) - 강점'; 
+                titleGood.style.textAlign = 'left'; 
                 titleGood.style.marginBottom = '32px';
 
-                // 강점 패널을 피드백 디테일에서 임시로 분리하고 보완점 패널을 제거 (순서 중요)
-                const originalImprovementPointsPanel = improvementPointsPanel.remove();
-                const originalGoodPointsNextSibling = goodPointsPanel.nextSibling; // 복구를 위해 다음 형제를 저장
-
+                // 래퍼에 제목과 강점 패널 삽입
                 tempGoodPointsWrapper.appendChild(titleGood);
-                tempGoodPointsWrapper.appendChild(goodPointsPanel);
+                tempGoodPointsWrapper.appendChild(goodPointsPanel); // goodPointsPanel을 feedbackDetails에서 tempWrapper로 이동
 
-                originalFeedbackDetailsParent.parentNode.insertBefore(tempGoodPointsWrapper, originalFeedbackDetailsParent.nextSibling); // DOM에 임시 래퍼 삽입
+                // DOM에 임시 래퍼 삽입 및 캡처
+                reportHeader.parentNode.insertBefore(tempGoodPointsWrapper, reportHeader.nextSibling); 
                 await new Promise(resolve => setTimeout(resolve, 50)); 
                 
                 canvases.push(await html2canvas(tempGoodPointsWrapper, {
@@ -764,10 +767,14 @@
                 
                 // 원본 DOM 복구 1 (강점)
                 tempGoodPointsWrapper.remove(); // 임시 래퍼 제거
-                originalGoodPointsParent.insertBefore(goodPointsPanel, originalGoodPointsNextSibling); // feedbackDetails에 다시 강점 패널 삽입
+                // goodPointsPanel을 원래 부모(feedbackDetails)의 원래 위치로 복구
+                originalGoodPointsParent.insertBefore(goodPointsPanel, originalImprovementPointsNextSibling); 
 
 
                 // 3. 보완점 (Improvement Points) 섹션 캡처 (Page 3)
+                // 강점 패널 제거
+                goodPointsPanel.remove(); 
+                
                 // 임시 래퍼를 생성하여 제목과 보완점 패널을 포함
                 const tempImprovementPointsWrapper = document.createElement('div');
                 tempImprovementPointsWrapper.className = 'main-card report-header-temp'; 
@@ -777,15 +784,16 @@
                 tempImprovementPointsWrapper.style.marginBottom = '40px';
 
                 const titleImprovement = reportSummaryTitle.cloneNode(true);
-                titleImprovement.textContent = '📈 훈련 결과 (요약) - 보완점'; // 명확한 제목
+                titleImprovement.textContent = '📈 훈련 결과 (요약) - 보완점'; 
                 titleImprovement.style.textAlign = 'left';
                 titleImprovement.style.marginBottom = '32px';
 
-                // 보완점 패널을 래퍼에 삽입 (아직 DOM에 있지 않은 상태)
+                // 래퍼에 제목과 보완점 패널 삽입 
                 tempImprovementPointsWrapper.appendChild(titleImprovement);
-                tempImprovementPointsWrapper.appendChild(originalImprovementPointsPanel);
+                tempImprovementPointsWrapper.appendChild(improvementPointsPanel); // improvementPointsPanel을 originalGoodPointsParent에서 tempWrapper로 이동
                 
-                originalFeedbackDetailsParent.parentNode.insertBefore(tempImprovementPointsWrapper, originalFeedbackDetailsParent.nextSibling); // DOM에 임시 래퍼 삽입
+                // DOM에 임시 래퍼 삽입 및 캡처
+                reportHeader.parentNode.insertBefore(tempImprovementPointsWrapper, reportHeader.nextSibling); 
                 await new Promise(resolve => setTimeout(resolve, 50)); 
 
                 canvases.push(await html2canvas(tempImprovementPointsWrapper, {
@@ -797,16 +805,19 @@
 
                 // 원본 DOM 복구 2 (보완점)
                 tempImprovementPointsWrapper.remove(); // 임시 래퍼 제거
-                originalGoodPointsParent.appendChild(originalImprovementPointsPanel); // 다시 feedbackDetails에 삽입
+                
+                // 강점 패널과 보완점 패널을 원래 부모(feedbackDetails)에 복구
+                originalGoodPointsParent.appendChild(goodPointsPanel);
+                originalGoodPointsParent.appendChild(improvementPointsPanel);
                 
                 // **복구 완료:** reportHeader의 원래 자식들을 다시 삽입
-                reportHeader.appendChild(originalReportSummaryTitle);
-                reportHeader.appendChild(originalFeedbackDetails);
+                reportHeader.insertBefore(reportSummaryTitle, originalReportSummaryTitleNextSibling);
+                reportHeader.insertBefore(feedbackDetails, originalFeedbackDetailsNextSibling);
                 await new Promise(resolve => setTimeout(resolve, 50)); // DOM 변경 적용 대기
                 
                 // --- V4.5: 3개 영역 분할 캡처 종료 ---
                 
-                // 4. 상세 코칭 제목 카드 캡처 (이전 V4.4 로직 유지)
+                // 4. 상세 코칭 제목 카드 캡처 
                 // 이 카드는 제목과 설명만 캡처하기 위해 자식 컨테이너를 숨겨야 합니다.
                 reviewContainer.style.display = 'none'; // 자식 컨테이너 숨김
                 await new Promise(resolve => setTimeout(resolve, 50)); // DOM 변경 적용 대기
@@ -872,14 +883,24 @@
                 if(reviewContainer.style.display === 'none') {
                     reviewContainer.style.display = 'block';
                 }
-                // v4.5 복구 (try 블록 내부에서 실패할 경우 대비)
+                
+                // V4.6 복구 로직: Node 참조 변수들을 다시 삽입 (null이 아닌 경우에만)
                 const reportHeader = reportSection.querySelector('.main-card.report-header');
-                const reportSummaryTitle = reportHeader.querySelector('.report-summary-title');
-                const feedbackDetails = reportHeader.querySelector('.feedback-details');
 
-                // 원본 요소들이 DOM 밖에 있다면 다시 삽입 시도 (안전을 위해)
+                // 원본 요소들이 DOM 밖에 있다면 다시 삽입 시도
                 if(!reportHeader.contains(reportSummaryTitle) && reportSummaryTitle) reportHeader.appendChild(reportSummaryTitle);
                 if(!reportHeader.contains(feedbackDetails) && feedbackDetails) reportHeader.appendChild(feedbackDetails);
+                
+                if(feedbackDetails.contains(goodPointsPanel) && !feedbackDetails.contains(improvementPointsPanel) && improvementPointsPanel) {
+                     feedbackDetails.appendChild(improvementPointsPanel); // 보완점만 누락된 경우
+                }
+                if(!feedbackDetails.contains(goodPointsPanel) && goodPointsPanel) {
+                    // 강점 패널이 없는 경우 (순서대로 다시 삽입)
+                    const tempFeedbackDetails = document.createElement('div');
+                    tempFeedbackDetails.appendChild(goodPointsPanel);
+                    tempFeedbackDetails.appendChild(improvementPointsPanel);
+                    feedbackDetails.innerHTML = tempFeedbackDetails.innerHTML;
+                }
                 
                 // 임시 래퍼 제거 (혹시 남아있다면)
                 document.querySelectorAll('.report-header-temp').forEach(el => el.remove());
