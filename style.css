@@ -325,32 +325,63 @@ textarea.analysis-input.invalid {
 
 #chart-container { display: none; }
 
+/* --- [수정] 아코디언 UI 적용 --- */
 #detailed-review-container {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px; /* 카드 간격을 16px로 줄임 */
 }
+
+/* [수정] .review-card를 details 태그 기준으로 변경 */
 .review-card {
     background-color: var(--white-color);
     border: 1px solid var(--border-color);
-    border-radius: 16px; /* [v4.0] */
+    border-radius: 16px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     overflow: hidden;
+    transition: background-color 0.2s ease;
 }
+
+/* [수정] 헤더를 summary 태그 기준으로 변경 */
 .review-card-header {
     background-color: var(--light-bg-color);
     padding: 16px 24px;
     border-bottom: 1px solid var(--border-color);
+    cursor: pointer; /* 클릭 가능하도록 커서 변경 */
+    transition: background-color 0.2s ease;
+    list-style: none; /* summary의 기본 화살표 제거 (IE/Edge) */
 }
+.review-card-header::-webkit-details-marker {
+    display: none; /* summary의 기본 화살표 제거 (Chrome/Safari) */
+}
+.review-card-header:hover {
+    background-color: #f0f0f0;
+}
+
 .review-card-header h4 {
     margin: 0; font-size: 17px; font-weight: 700;
+    display: inline-block; /* 클릭 영역을 위해 */
 }
+
+/* [추가] 아코디언이 열렸을 때의 스타일 */
+.review-card[open] {
+    background-color: #fcfcfc;
+}
+.review-card[open] .review-card-header {
+    /* 열렸을 때는 summary와 body 사이에 선이 없도록 함 */
+    border-bottom: none; 
+}
+
+/* [수정] review-card-body의 border-top 추가 (열렸을 때 선) */
 .review-card-body {
     padding: 24px;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
+    border-top: 1px solid var(--border-color); /* 헤더와 구분선 */
 }
+/* --- [끝] 아코디언 UI 수정 --- */
+
 .review-card-body .original-text-container { display: none; }
 
 .user-analysis-box, .coach-feedback-box {
@@ -462,6 +493,73 @@ footer {
     to { opacity: 1; }
 }
 
+/* --- [추가] 원본 텍스트 뷰어 모달 --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 24px;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background: var(--white-color);
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    position: relative;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-sizing: border-box; /* 패딩 포함 크기 계산 */
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+#modal-chunk-text {
+    background: var(--light-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    font-size: 16px;
+    line-height: 1.7;
+    word-break: keep-all;
+    max-height: 50vh; /* 모달 내용이 길어질 경우 스크롤 */
+    overflow-y: auto;
+}
+
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    font-weight: 700;
+    color: #888;
+    cursor: pointer;
+    line-height: 1;
+    padding: 8px;
+}
+.modal-close:hover {
+    color: #333;
+}
+/* --- [끝] 모달 --- */
+
+
 /* 모바일 반응형 */
 @media (max-width: 768px) {
     .container { padding: 32px 20px; } /* [v4.0] */
@@ -505,5 +603,10 @@ footer {
         width: 100%;
         padding-left: 16px;
         padding-right: 16px;
+    }
+
+    /* 모달 모바일 */
+    .modal-content {
+        padding: 24px;
     }
 }

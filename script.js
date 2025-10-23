@@ -402,6 +402,7 @@
         }
 
         // --- [v2.1] Display Feedback Report (v3.0 버튼 표시 로직 추가) ---
+        // --- [수정] 아코디언 UI (details, summary) 및 모달 속성 (data-full-text) 적용 ---
          function displayFeedbackReport(feedback) {
             if (typeof feedback !== 'object' || feedback === null || !feedback.detailed_review) {
                 console.error("Invalid feedback format:", feedback);
@@ -414,7 +415,6 @@
                 score = 0,
                 summary_good_points = [],
                 summary_improvement_points = [],
-                personalized_action_plan = '다음 훈련에서 보완점을 개선해보세요.',
                 detailed_review = []
              } = feedback;
 
@@ -439,15 +439,18 @@
                     : `<p class="empty-analysis">분석을 입력하지 않았습니다.</p>`;
                  
                  const rawFeedback = review.specific_feedback;
-                 // [v4.0] 피드백 반영: formatFeedbackText 함수를 사용하여 [키워드] 강조
                  const formattedFeedback = formatFeedbackText(rawFeedback);
+                 
+                 // [수정] 헤더 텍스트 생성
+                 const headerText = `📄 훈련 #${index + 1}: ${safeHtml(review.original_chunk.substring(0, 40))}...`;
 
-                 // [v4.0] 피드백 반영: 헤더에 이모티콘 및 요약 텍스트 사용 (기존 로직 유지)
+                 // [수정] <details>와 <summary>를 사용한 아코디언 구조로 변경
+                 //         <summary>에 data-full-text와 review-header-clickable 클래스 추가
                  const cardHtml = `
-                    <div class="review-card">
-                        <div class="review-card-header">
-                            <h4>📄 훈련 #${index + 1}: ${safeHtml(review.original_chunk.substring(0, 40))}...</h4>
-                        </div>
+                    <details class="review-card">
+                        <summary class="review-card-header review-header-clickable" data-full-text="${safeHtml(review.original_chunk)}">
+                            <h4>${headerText}</h4>
+                        </summary>
                         <div class="review-card-body">
                             <div class="user-analysis-box">
                                 <h5>나의 훈련 내용</h5>
@@ -458,10 +461,16 @@
                                 <p>${formattedFeedback}</p>
                             </div>
                         </div>
-                    </div>
+                    </details>
                  `;
                  detailedReviewContainer.innerHTML += cardHtml;
              });
+
+            // [추가] 첫 번째 아코디언 항목은 기본으로 열어둠
+            const firstDetail = detailedReviewContainer.querySelector('.review-card');
+            if(firstDetail) {
+                firstDetail.open = true;
+            }
 
 
             goodPointsList.innerHTML = summary_good_points.length > 0
@@ -717,6 +726,56 @@
             }
             return safeText;
         }
+
+
+        // --- [추가] 모달 제어 로직 ---
+        const modal = document.getElementById('chunk-modal');
+        const modalText = document.getElementById('modal-chunk-text');
+        const modalClose = document.getElementById('modal-close-button');
+
+        // 모달 여는 함수
+        function showChunkModal(fullText) {
+            modalText.innerHTML = safeHtml(fullText).replace(/\n/g, '<br>'); // 줄바꿈 유지
+            modal.classList.remove('hidden');
+        }
+
+        // 모달 닫는 함수
+        function hideChunkModal() {
+            modal.classList.add('hidden');
+        }
+
+        // 이벤트 리스너 (이벤트 위임 사용)
+        // .review-header-clickable는 동적으로 생성되므로 document에 리스너를 붙임
+        document.addEventListener('click', function(e) {
+            // 헤더 클릭 시
+            const header = e.target.closest('.review-header-clickable');
+            if (header) {
+                // <summary>의 기본 동작(아코디언 열기/닫기)이 실행된 *직후* 모달을 연다.
+                // (만약 summary 내부의 h4를 클릭했다면 즉시 실행)
+                setTimeout(() => {
+                    // 아코디언이 열리거나 닫히는 동작과 모달이 동시에 뜨는 것을 방지
+                    // (사용자가 헤더의 텍스트 영역을 명확히 클릭했을 때만 모달이 뜨도록)
+                    if (e.target.tagName === 'H4' || e.target.tagName === 'SUMMARY') {
+                         // data-full-text 속성에서 원본 텍스트를 가져옴
+                        const fullText = header.dataset.fullText;
+                        if (fullText) {
+                            showChunkModal(fullText);
+                        }
+                    }
+                }, 50); // 50ms 딜레이로 summary 기본 동작과 충돌 방지
+            }
+
+            // 모달 닫기 버튼 클릭 시
+            if (e.target === modalClose) {
+                hideChunkModal();
+            }
+
+            // 모달 바깥 영역(overlay) 클릭 시
+            if (e.target === modal) {
+                hideChunkModal();
+            }
+        });
+        // --- [끝] 모달 제어 로직 ---
 
 
         // Helper function for safe HTML display
