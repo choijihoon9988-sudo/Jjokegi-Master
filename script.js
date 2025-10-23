@@ -51,7 +51,7 @@
                     * \`score\`: An overall integer score (0-100) based on the 4 criteria.
                     * \`summary_good_points\`: An array of 2-3 strings (KOREAN) summarizing the main strengths **of the user's *analyses***.
                     * \`summary_improvement_points\`: An array of 2-3 strings (KOREAN) summarizing the biggest weaknesses **of the user's *analyses***. (e.g., "'반박 제거' 논리 분석이 전반적으로 부족함.")
-                    * \`personalized_action_plan\`: A single string (KOREAN) proposing a *specific, actionable* next training goal.
+                    * \`personalized_action_plan\`: A single string (KOREAN) proposing a *specific, actionable* next training goal. (Note: This is used for the *deleted* 'action plan' placeholder, but is still useful for the AI's internal logic).
 
                 **Your output MUST be a single, raw JSON object in the following structure. Do not add any other text or markdown.**
 
@@ -162,13 +162,15 @@
         const goodPointsList = document.getElementById('good-points-list'); // (요약)
         const improvementPointsList = document.getElementById('improvement-points-list'); // (요약)
         
-        // [v2.1] 아이디어 6: 소크라테스식 질문 배열
+        /*
+        // [사용자 피드백 반영] v2.1 아이디어 6: 소크라테스식 질문 배열 (제거됨)
         const socraticQuestions = [
             "이번 훈련에서 드러난 나의 고질적인 '생각의 패턴'은 무엇이었나?",
             "다음 훈련에서 의식적으로 다르게 시도해 볼 단 한 가지는 무엇인가?",
             "오늘 받은 1:1 코칭 중 가장 뼈아픈(핵심적인) 피드백은 무엇인가?",
             "이 피드백을 내일 작성할 OOO 콘텐츠에 어떻게 적용할 수 있을까?"
         ];
+        */
 
         // --- [v3.0] 전역 상태 변수 업데이트 ---
         let selectedCourse = null;
@@ -201,7 +203,8 @@
         downloadPdfButton.addEventListener('click', handleDownloadPDF); // [v2.2]
         generatePromptButton.addEventListener('click', handleGeneratePrompt); // [v3.0]
 
-        // [v2.1] 아이디어 4: '가장 중요한 한 가지' 글자 수 카운터
+        /*
+        // [사용자 피드백 반영] v2.1 아이디어 4: '가장 중요한 한 가지' 글자 수 카운터 (제거됨)
         document.addEventListener('input', function(e) {
             if (e.target.id === 'action-plan-input') {
                 const length = e.target.value.length;
@@ -211,8 +214,10 @@
                 }
             }
         });
+        */
 
-        // [v2.1] 아이디어 5: '피드백-실천' 연결 (이벤트 위임)
+        /*
+        // [사용자 피드백 반영] v2.1 아이디어 5: '피드백-실천' 연결 (이벤트 위임) (제거됨)
         detailedReviewContainer.addEventListener('click', function(e) {
             // 클릭된 요소 또는 그 부모가 .btn-use-as-lesson인지 확인
             const button = e.target.closest('.btn-use-as-lesson');
@@ -246,6 +251,7 @@
                 actionPlanInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         });
+        */
 
 
         // --- Core Functions ---
@@ -339,7 +345,7 @@
             analysisInputsContainer.innerHTML = `
                 <div class="chunk-card">
                     <div class="original-text-container">
-                        <h4>#${currentChunkIndex + 1} 훈련할 원본</h4>
+                        <h4>📄 훈련 #${currentChunkIndex + 1}</h4>
                         <p class="original-text">${safeChunk}</p>
                     </div>
                     <div class="analysis-input-container">
@@ -458,7 +464,7 @@
                 score = 0,
                 summary_good_points = [],
                 summary_improvement_points = [],
-                personalized_action_plan = '다음 훈련에서 보완점을 개선해보세요.', // [v2.1] 아이디어 4: Placeholder용
+                personalized_action_plan = '다음 훈련에서 보완점을 개선해보세요.', // [v2.1] (현재 UI에서 사용되진 않음)
                 detailed_review = []
              } = feedback;
 
@@ -469,9 +475,10 @@
             else if (score >= 40) scoreClass = 'score-b';
 
             // [v2.1] 아이디어 2: 동기부여 요약문으로 변경
+            // [사용자 피드백 반영] '75%' 고정값 대신 유동적인 문구로 수정
             let summary = '괜찮습니다. 모든 마스터도 이 단계에서 시작했습니다. 1:1 코칭을 성장의 발판으로 삼으세요.';
             if (score >= 85) summary = '압도적인 분석입니다! S-Class의 본질을 꿰뚫고 있습니다.';
-            else if (score >= 60) summary = '좋은 시도입니다. 핵심의 75%를 파악하셨군요. 나머지를 함께 다듬어볼까요?';
+            else if (score >= 60) summary = '좋은 시도입니다. 핵심을 상당히 파악하셨군요. 나머지를 함께 다듬어볼까요?';
             else if (score >= 40) summary = '성장의 가능성이 보입니다. 1:1 코칭을 통해 핵심을 찾아보세요.';
 
             feedbackScoreEl.textContent = `${score}점`;
@@ -489,10 +496,12 @@
                  const rawFeedback = review.specific_feedback;
                  const formattedFeedback = formatFeedbackText(rawFeedback); // 포맷팅 함수 사용
 
+                 // [사용자 피드백 반영] 헤더 형식을 샵(#) 대신 이모티콘과 훈련 번호로 변경
+                 // [사용자 피드백 반영] 'btn-use-as-lesson' 버튼 제거
                  const cardHtml = `
                     <div class="review-card">
                         <div class="review-card-header">
-                            <h4>#${index + 1} 원본: "${safeHtml(review.original_chunk.substring(0, 40))}..."</h4>
+                            <h4>📄 훈련 #${index + 1}: ${safeHtml(review.original_chunk.substring(0, 40))}...</h4>
                         </div>
                         <div class="review-card-body">
                             <div class="user-analysis-box">
@@ -501,8 +510,7 @@
                             </div>
                             <div class="coach-feedback-box">
                                 <h5>S-Class 코칭</h5>
-                                <p>${formattedFeedback}</p> <button class="btn-use-as-lesson" data-feedback-text="${safeHtml(rawFeedback)}"> + 이 교훈을 나의 'Next Step'으로 삼기
-                                </button>
+                                <p>${formattedFeedback}</p>
                             </div>
                         </div>
                     </div>
@@ -520,18 +528,20 @@
                 ? summary_improvement_points.map(p => `<li>${safeHtml(p)}</li>`).join('')
                 : '<li>요약된 보완점이 없습니다.</li>';
 
-             // 5. [v2.1] 아이디어 4: 액션 플랜 (AI 제안을 Placeholder로 사용)
+             /*
+             // [사용자 피드백 반영] v2.1 아이디어 4: 액션 플랜 (제거됨)
              const actionPlanInput = document.getElementById('action-plan-input');
              if(actionPlanInput) {
                 actionPlanInput.placeholder = safeHtml(personalized_action_plan);
              }
              
-             // 6. [v2.1] 아이디어 6: 소크라테스식 질문 설정
+             // [사용자 피드백 반영] v2.1 아이디어 6: 소크라테스식 질문 설정 (제거됨)
              const questionEl = document.getElementById('socratic-question');
              if (questionEl) {
                  const randomIndex = Math.floor(Math.random() * socraticQuestions.length);
                  questionEl.textContent = socraticQuestions[randomIndex];
              }
+             */
              
              // 7. [v3.0] S급 성장 처방 버튼 표시
              generatePromptButton.classList.remove('hidden');
@@ -612,14 +622,15 @@
             analysisInputsContainer.innerHTML = ''; // 훈련 카드 제거
             detailedReviewContainer.innerHTML = ''; // v2.0: 상세 리뷰 제거
             
-            // [v2.1] 아이디어 4, 6: 입력 필드 초기화
+            /*
+            // [사용자 피드백 반영] v2.1 아이디어 4, 6: 입력 필드 초기화 (제거됨)
             const actionPlanInput = document.getElementById('action-plan-input');
             if(actionPlanInput) actionPlanInput.value = '';
             const selfCoachingInput = document.getElementById('self-coaching-input');
             if(selfCoachingInput) selfCoachingInput.value = '';
             const actionPlanCounter = document.getElementById('action-plan-counter');
             if(actionPlanCounter) actionPlanCounter.textContent = '0 / 140자';
-
+            */
 
             progressIndicator.textContent = '';
             nextChunkButton.textContent = '다음 ➔'; // v2.1: 버튼 텍스트 초기화
@@ -765,7 +776,7 @@
                 const imgWidth = canvas.width;
                 const imgHeight = canvas.height;
 
-                // PDF 페이지 크기를 캔버스 크기에 맞춤
+                // PDF 페이지 크기를 L캔버스 크기에 맞춤
                 const pdf = new jsPDF({
                     orientation: imgWidth > imgHeight ? 'l' : 'p', // 'landscape' or 'portrait'
                     unit: 'px',

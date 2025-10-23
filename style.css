@@ -145,8 +145,11 @@
        .btn-secondary:hover { background-color: #5a6268; }
        
        /* [v3.0] 버튼 간격 일관성 적용 */
+       /* [사용자 피드백 반영] PDF 버튼 크기 및 하단 버튼 여백/크기 조정 */
        #download-pdf-button, #generate-prompt-button, #reset-button {
            margin-top: 16px;
+           padding: 16px; /* 기본 버튼(18px)보다 약간 작게 조정 */
+           font-size: 17px; /* 기본 버튼(18px)보다 약간 작게 조정 */
        }
        /* [v3.0] 다운로드 버튼은 첫번째 버튼이므로 v2.2의 32px 유지 */
        #download-pdf-button {
@@ -190,7 +193,9 @@
             margin: 0 0 12px 0; font-size: 15px; font-weight: 700; /* [v2.1] 아이디어 9: 스케일 조정 */
             color: #555; display: flex; align-items: center; gap: 6px;
        }
-       .original-text-container h4::before { content: '📄'; }
+       /* [사용자 피드백 반영] 이모티콘 중복 방지를 위해 ::before 제거 */
+       /* .original-text-container h4::before { content: '📄'; } */
+       
         p.original-text {
             font-size: 16px; line-height: 1.7; margin: 0;
             word-break: keep-all;
@@ -199,7 +204,8 @@
             margin: 0 0 12px 0; font-size: 15px; font-weight: 700; /* [v2.1] 아이디어 9: 스케일 조정 */
             color: var(--primary-color); display: flex; align-items: center; gap: 6px;
        }
-        .analysis-input-container h4::before { content: '✍️'; }
+       /* [사용자 피드백 반영] 이모티콘 중복 방지를 위해 ::before 제거 */
+       /* .analysis-input-container h4::before { content: '✍️'; } */
 
         textarea.analysis-input {
             width: 100%; height: 160px; padding: 14px; /* [v2.1] 아이디어 9: 여백 조정 */
@@ -340,9 +346,11 @@
             display: flex; align-items: center; gap: 8px;
         }
         .user-analysis-box h5 { color: var(--success-color); }
-        .user-analysis-box h5::before { content: '✔️'; }
+        /* [사용자 피드백 반영] 이모티콘 중복 방지를 위해 ::before 제거 */
+        /* .user-analysis-box h5::before { content: '✔️'; } */
         .coach-feedback-box h5 { color: var(--primary-color); }
-        .coach-feedback-box h5::before { content: '📈'; }
+        /* [사용자 피드백 반영] 이모티콘 중복 방지를 위해 ::before 제거 */
+        /* .coach-feedback-box h5::before { content: '📈'; } */
 
         .review-card p {
             margin: 0; font-size: 15px; line-height: 1.7;
@@ -354,37 +362,24 @@
         }
 
         /* [v2.2] 피드백 가독성 향상 */
+        /* [사용자 피드백 반영] script.js에서 <strong> 처리하므로 CSS 스타일 최소화 */
         .coach-feedback-box p strong {
             color: var(--primary-color);
             font-weight: 700;
-            display: inline-block;
-            margin-top: 8px;
-            margin-bottom: 2px;
             font-size: 15px;
         }
-        .coach-feedback-box p strong:first-of-type {
+        /* [사용자 피드백 반영] <br> 태그로 줄바꿈을 제어하므로 margin 제거 */
+        .coach-feedback-box p strong {
+            display: inline-block;
             margin-top: 0;
+            margin-bottom: 0;
         }
 
 
-        /* [v2.1] 아이디어 5: '피드백-실천' 연결 버튼 */
-        .btn-use-as-lesson {
-            background: none;
-            border: none;
-            color: var(--primary-color);
-            font-family: var(--font-family);
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            padding: 0;
-            margin-top: 16px; /* [v2.1] 아이디어 9: 여백 */
-            opacity: 0.9;
-            transition: opacity 0.2s;
-        }
-        .btn-use-as-lesson:hover {
-            opacity: 1;
-            text-decoration: underline;
-        }
+        /* [사용자 피드백 반영] '피드백-실천' 버튼 제거됨 */
+        /*
+        .btn-use-as-lesson { ... }
+        */
 
         /* 피드백 요약 패널 */
        .feedback-details {
@@ -419,92 +414,19 @@
            content: '📈'; position: absolute; left: 0; top: 2px;
        }
 
-        /* [v2.1] 아이디어 4: '가장 중요한 한 가지' 실천 계획 */
-        .action-plan-section {
-            background-color: var(--white-color);
-            border: 1px solid var(--border-color);
-            /* [v2.1] 아이디어 9: 내부 여백 증가 (24px -> 32px) */
-            border-radius: 12px; padding: 32px;
-            /* [v2.1] 아이디어 9: 여백 증가 (24px -> 32px) */
-            margin-bottom: 32px; 
-        }
-         .action-plan-section h3 {
-             /* [v2.1] 아이디어 9: 스케일 조정 (18px -> 20px) */
-             font-size: 20px; font-weight: 700; 
-             margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px; /* [v2.1] 아이디어 9: 여백 조정 */
-             color: var(--primary-color);
-         }
-        .action-plan-section h3::before { content: '🎯'; }
-         .action-plan-section p {
-             font-size: 16px; line-height: 1.7; margin: 0 0 16px 0; color: #555; /* [v2.1] 아이디어 9: 여백 추가 */
-         }
-         #action-plan-input {
-            width: 100%;
-            padding: 14px 16px;
-            font-size: 16px;
-            font-family: var(--font-family);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-sizing: border-box;
-            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s ease;
-         }
-         #action-plan-input:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(74, 128, 243, 0.2);
-            outline: none;
-            background-color: var(--white-color); /* [v2.1] 아이디어 5: 포커스 시 배경색 원복 */
-         }
-         #action-plan-counter {
-            text-align: right;
-            font-size: 14px;
-            color: #888;
-            margin-top: 8px;
-         }
+        /* [사용자 피드백 반영] '가장 중요한 한 가지' 섹션 제거됨 */
+        /*
+        .action-plan-section { ... }
+        #action-plan-input { ... }
+        #action-plan-counter { ... }
+        */
          
-        /* [v2.1] 아이디어 6: '소크라테스식' 셀프 코칭 */
-        .self-coaching-section {
-            background-color: var(--white-color);
-            border: 1px solid var(--border-color);
-            /* [v2.1] 아이디어 9: 내부 여백 증가 (24px -> 32px) */
-            border-radius: 12px; padding: 32px; 
-            /* [v2.1] 아이디어 9: 여백 증가 (24px -> 32px) */
-            margin-bottom: 32px; 
-        }
-         .self-coaching-section h3 {
-             /* [v2.1] 아이디어 9: 스케일 조정 (18px -> 20px) */
-             font-size: 20px; font-weight: 700; 
-             margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; /* [v2.1] 아이디어 9: 여백 조정 */
-             color: var(--primary-color);
-         }
-        .self-coaching-section h3::before { content: '🤔'; }
-         /* [v2.1] 아이디어 6: 동적 질문 스타일 */
-         #socratic-question {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-color);
-            margin: 0 0 16px 0;
-            padding: 16px;
-            background-color: var(--light-bg-color);
-            border-radius: 8px;
-            line-height: 1.6;
-         }
-         /* [v2.1] 아이디어 6: 입력 영역 */
-         #self-coaching-input {
-            width: 100%;
-            height: 100px;
-            padding: 14px 16px;
-            font-size: 16px;
-            font-family: var(--font-family);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-sizing: border-box;
-            resize: vertical;
-         }
-         #self-coaching-input:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(74, 128, 243, 0.2);
-            outline: none;
-         }
+        /* [사용자 피드백 반영] '소크라테스식' 셀프 코칭 섹션 제거됨 */
+        /*
+        .self-coaching-section { ... }
+        #socratic-question { ... }
+        #self-coaching-input { ... }
+        */
 
         /* --- [END v2.1] 피드백 리포트 --- */
 
@@ -552,7 +474,7 @@
            .main-card { padding: 24px; } /* [v2.1] 아이디어 9: 여백 조정 */
            .chunk-card { padding: 20px; } /* [v2.1] 아이디어 9: 여백 조정 */
            .feedback-panel { padding: 24px; } /* [v2.1] 아이디어 9: 여백 조정 */
-           .action-plan-section, .self-coaching-section { padding: 24px; } /* [v2.1] 아이디어 9: 여백 조정 */
+           /* [사용자 피드백 반영] 제거된 섹션의 모바일 스타일 제거 */
            
            #text-input { height: 150px; }
            .course-options { flex-direction: column; }

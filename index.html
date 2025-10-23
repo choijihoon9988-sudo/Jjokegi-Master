@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>쪼개기 마스터 v3.0 (Closed Loop)</title>
+    <title>쪼개기 마스터 v3.1 (Feedback Applied)</title>
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -92,20 +92,7 @@
                  </div>
             </div>
 
-            <div class="action-plan-section">
-                 <h3>🎯 가장 중요한 한 가지 (My Next Step)</h3>
-                 <p>이번 훈련에서 얻은 가장 중요한 한 가지 교훈은 무엇인가요?</p>
-                 <input type="text" id="action-plan-input" placeholder="AI의 제안 또는 나의 생각을 140자 내로 요약..." maxlength="140">
-                 <div id="action-plan-counter">0 / 140자</div>
-             </div>
-
-             <div class="self-coaching-section">
-                 <h3>🤔 성장을 위한 성찰</h3>
-                 <h4 id="socratic-question"></h4>
-                 <textarea id="self-coaching-input" placeholder="나의 생각을 정리해보세요..."></textarea>
-             </div>
-             
-             <button id="download-pdf-button" class="btn btn-secondary">📈 리포트 PDF로 저장</button>
+            <button id="download-pdf-button" class="btn btn-secondary">📈 리포트 PDF로 저장</button>
              
              <button id="generate-prompt-button" class="btn hidden">🚀 S급 성장 처방받기 (프롬프트 복사)</button>
 
