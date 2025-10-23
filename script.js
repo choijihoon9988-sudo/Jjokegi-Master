@@ -695,10 +695,19 @@
                          throw new Error("AI로부터 유효한 응답 구조를 받지 못했습니다.");
                     }
 
-                    const jsonString = data.candidates[0].content.parts[0].text;
+                    // --- [오류 수정 시작] ---
+                    let jsonString = data.candidates[0].content.parts[0].text; // const를 let으로 변경
 
                     try {
+                        // [오류 수정] AI 응답에서 순수 JSON만 추출 (```json ... ``` 같은 마크다운 제거)
+                        const jsonMatch = jsonString.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+                        if (jsonMatch && jsonMatch[0]) {
+                            jsonString = jsonMatch[0];
+                        }
+                        // [수정 끝]
+
                         const parsedResult = JSON.parse(jsonString);
+                        
                         // v3.0: 피드백 프롬프트는 'detailed_review' 키를 포함한 객체여야 함
                          if (prompt.includes('S-Class Coach') && (typeof parsedResult !== 'object' || parsedResult === null || !parsedResult.detailed_review)) {
                              console.error("Feedback prompt did not return a valid object with 'detailed_review':", parsedResult);
@@ -706,9 +715,12 @@
                          }
                         return parsedResult;
                     } catch (parseError) {
-                        console.error("Failed to parse JSON response:", jsonString, parseError);
+                        console.error("Failed to parse JSON response (cleaned):", jsonString, parseError);
+                        // [오류 수정] 디버깅을 위해 정제 전 원본 AI 응답도 로깅
+                        console.error("Original AI response (pre-cleaning):", data.candidates[0].content.parts[0].text); 
                         throw new Error("AI가 유효한 JSON 형식을 반환하지 않았습니다.");
                     }
+                    // --- [오류 수정 끝] ---
 
                 } catch (error) {
                     console.error("API Error during fetch or processing:", error);
