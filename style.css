@@ -530,12 +530,12 @@ textarea.analysis-input.invalid {
 /* --- [END v2.1] 피드백 리포트 --- */
 
 
-/* --- [v4.7] 로딩 스크린 UI 개선 --- */
+/* --- [v4.8] 로딩 스크린 UI 개선 (v2) --- */
 #dynamic-loader {
     text-align: center;
     padding: 48px;
+    display: flex; /* [v4.8] 텍스트 중앙 정렬을 위해 flex 추가 */
     flex-direction: column;
-    /* gap: 24px; [v4.7] 스피너가 absolute가 되면서 제거 */
     align-items: center;
     justify-content: center;
     border-radius: 20px; /* [v4.0] */
@@ -557,12 +557,12 @@ textarea.analysis-input.invalid {
     left: 48px;
 }
 #loader-text {
-    font-size: 19px; /* [v4.7] 폰트 크기 증가 */
+    font-size: 20px; /* [v4.8] 폰트 크기 증가 (19px -> 20px) */
     font-weight: 600;
     color: var(--text-color);
     margin: 0;
 }
-/* --- [END v4.7] --- */
+/* --- [END v4.8] --- */
 
 footer {
     text-align: center; padding: 20px;
@@ -616,7 +616,7 @@ footer {
         padding-top: 20px;
     }
 
-    /* [v4.7] 로더 모바일 */
+    /* [v4.8] 로더 모바일 (v4.7과 동일) */
     #dynamic-loader {
         padding: 24px;
         min-height: 150px;
@@ -626,7 +626,7 @@ footer {
         left: 24px;
     }
     #loader-text {
-        font-size: 17px;
+        font-size: 18px; /* [v4.8] 폰트 크기 증가 (17px -> 18px) */
     }
 
 
