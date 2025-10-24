@@ -1,4 +1,6 @@
 // choijihoon9988-sudo/jjokegi-master/Jjokegi-Master-cf08a48a234322a7392f340a45fdc977e1ba0e13/script.js
+// [v4.11] PDF 한글 깨짐 문제 해결 (확실한 방법)
+// - handleDownloadPDF 함수에 .ttf 폰트 파일을 직접 fetch/Base64 변환 후 VFS에 등록하는 로직 추가
 // [v4.10] PDF 한글 깨짐 수정: handleDownloadPDF 함수에 setFont('NanumGothic') 추가
 // [v4.9] PDF 저장 기능 (B안) 적용: AI가 문단 나눈 원본 텍스트를 1페이지에 삽입
 // [v4.9] SPLIT_PROMPT 수정 (Array -> Object 반환: { chunks: [], formatted_text: "..." })
@@ -799,49 +801,45 @@
         }
 
         // --- [v4.9] PDF 다운로드 기능 (B안 적용: 1페이지 텍스트 삽입) ---
-        // --- [v4.10] PDF 한글 깨짐 수정 ---
+        // --- [v4.11] PDF 한글 깨짐 수정 (fetch/btoa/VFS 등록 방식) ---
         async function handleDownloadPDF() {
             const { jsPDF } = window.jspdf;
             const reportSection = document.getElementById('feedback-report-section');
             
-            // [개선 1] 캡처 전에 모든 상세 코칭 아코디언을 찾습니다.
             const accordions = reportSection.querySelectorAll('#detailed-review-container .review-card');
             
-            // [v4.9] B안: AI가 포맷팅한 텍스트가 있는지 확인
             if (!formattedOriginalText) {
                 showError("PDF 생성을 위한 원본 텍스트 데이터가 없습니다. 훈련을 다시 시작해주세요.");
                 return;
             }
             
-            showDynamicLoader(["리포트를 PDF로 생성 중입니다..."]);
+            showDynamicLoader([
+                "리포트를 PDF로 생성 중입니다...",
+                "한글 폰트 파일을 다운로드 중입니다..." // [v4.11] 로더 메시지
+            ]);
             downloadPdfButton.disabled = true;
             downloadPdfButton.textContent = '생성 중...';
         
-            // [개선 1] 아코디언의 원래 'open' 상태를 저장하고 강제 열기
             const originalOpenStates = [];
-            // [v4.6] 요청 2: 헤더의 '텍스트' 상태도 저장
             const originalHeaderTexts = []; 
             
             accordions.forEach((acc, index) => {
                 originalOpenStates[index] = acc.open;
                 
-                // [v4.6] 헤더 텍스트(innerHTML)와 open 상태를 동기화
                 const h4 = acc.querySelector('.review-card-header h4');
                 if (h4) {
-                    originalHeaderTexts[index] = h4.innerHTML; // 현재 텍스트(축약/전체) 저장
-                    h4.innerHTML = h4.dataset.fullText; // PDF에는 항상 '전체' 텍스트
+                    originalHeaderTexts[index] = h4.innerHTML; 
+                    h4.innerHTML = h4.dataset.fullText; 
                 }
                 
-                acc.open = true; // 강제 열기
+                acc.open = true; 
             });
         
             try {
-                // DOM이 업데이트(아코디언 열림)된 후 캡처를 위해 잠시 대기 (안정성 강화)
-                await new Promise(resolve => setTimeout(resolve, 300)); // 300ms로 증가
+                await new Promise(resolve => setTimeout(resolve, 300));
                 
                 const canvases = [];
                 
-                // V4.6에 필요한 요소 참조
                 const reportHeader = reportSection.querySelector('.main-card.report-header');
                 const reportSummaryTitle = reportHeader.querySelector('.report-summary-title');
                 const feedbackDetails = reportHeader.querySelector('.feedback-details');
@@ -852,24 +850,19 @@
                 const detailedReviewTitleCard = reportSection.querySelectorAll('.main-card')[1];
                 const reviewContainer = document.getElementById('detailed-review-container');
 
-                // --- V4.6: 복구 지점 및 요소 참조 저장 ---
-                // 이 변수들은 Node 객체 자체를 참조합니다.
                 const originalReportSummaryTitleNextSibling = reportSummaryTitle.nextSibling;
                 const originalFeedbackDetailsNextSibling = feedbackDetails.nextSibling;
                 
-                const originalGoodPointsParent = goodPointsPanel.parentNode; // feedbackDetails
+                const originalGoodPointsParent = goodPointsPanel.parentNode; 
                 const originalImprovementPointsNextSibling = improvementPointsPanel.nextSibling;
-                // --- V4.6: 저장 끝 ---
-
 
                 // --- V4.5: 3개 영역 분할 캡처 시작 ---
                 
-                // 1. Score/Summary Section 캡처 (Page 1)
-                // 리스트 영역을 부모(reportHeader)에서 분리 (remove()의 반환값을 저장하지 않음)
+                // 1. Score/Summary Section 캡처
                 reportSummaryTitle.remove();
                 feedbackDetails.remove();
                 
-                await new Promise(resolve => setTimeout(resolve, 50)); // DOM 변경 적용 대기
+                await new Promise(resolve => setTimeout(resolve, 50)); 
 
                 canvases.push(await html2canvas(reportHeader, { 
                     scale: 2, 
@@ -879,31 +872,24 @@
                 }));
 
 
-                // 2. 강점 (Good Points) 섹션 캡처 (Page 2)
+                // 2. 강점 (Good Points) 섹션 캡처
+                improvementPointsPanel.remove(); 
                 
-                // 보완점 패널을 피드백 디테일에서 제거 (이동 준비)
-                improvementPointsPanel.remove(); // remove()의 반환값을 저장하지 않음
-                
-                // 임시 래퍼를 생성하여 제목과 강점 패널을 포함
                 const tempGoodPointsWrapper = document.createElement('div');
-                // 래퍼 스타일을 main-card와 유사하게 설정 (캡처 시 일관된 여백/스타일 유지)
                 tempGoodPointsWrapper.className = 'main-card report-header-temp'; 
                 tempGoodPointsWrapper.style.padding = '40px';
                 tempGoodPointsWrapper.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)';
                 tempGoodPointsWrapper.style.borderRadius = '20px';
                 tempGoodPointsWrapper.style.marginBottom = '40px';
                 
-                // 제목 클론 및 텍스트 수정
                 const titleGood = reportSummaryTitle.cloneNode(true); 
                 titleGood.textContent = '📈 훈련 결과 (요약) - 강점'; 
                 titleGood.style.textAlign = 'left'; 
                 titleGood.style.marginBottom = '32px';
 
-                // 래퍼에 제목과 강점 패널 삽입
                 tempGoodPointsWrapper.appendChild(titleGood);
-                tempGoodPointsWrapper.appendChild(goodPointsPanel); // goodPointsPanel을 feedbackDetails에서 tempWrapper로 이동
+                tempGoodPointsWrapper.appendChild(goodPointsPanel); 
 
-                // DOM에 임시 래퍼 삽입 및 캡처
                 reportHeader.parentNode.insertBefore(tempGoodPointsWrapper, reportHeader.nextSibling); 
                 await new Promise(resolve => setTimeout(resolve, 50)); 
                 
@@ -914,17 +900,13 @@
                     windowHeight: tempGoodPointsWrapper.scrollHeight
                 }));
                 
-                // 원본 DOM 복구 1 (강점)
-                tempGoodPointsWrapper.remove(); // 임시 래퍼 제거
-                // goodPointsPanel을 원래 부모(feedbackDetails)의 원래 위치로 복구
+                tempGoodPointsWrapper.remove(); 
                 originalGoodPointsParent.insertBefore(goodPointsPanel, originalImprovementPointsNextSibling); 
 
 
-                // 3. 보완점 (Improvement Points) 섹션 캡처 (Page 3)
-                // 강점 패널 제거
+                // 3. 보완점 (Improvement Points) 섹션 캡처
                 goodPointsPanel.remove(); 
                 
-                // 임시 래퍼를 생성하여 제목과 보완점 패널을 포함
                 const tempImprovementPointsWrapper = document.createElement('div');
                 tempImprovementPointsWrapper.className = 'main-card report-header-temp'; 
                 tempImprovementPointsWrapper.style.padding = '40px';
@@ -937,11 +919,9 @@
                 titleImprovement.style.textAlign = 'left';
                 titleImprovement.style.marginBottom = '32px';
 
-                // 래퍼에 제목과 보완점 패널 삽입 
                 tempImprovementPointsWrapper.appendChild(titleImprovement);
-                tempImprovementPointsWrapper.appendChild(improvementPointsPanel); // improvementPointsPanel을 originalGoodPointsParent에서 tempWrapper로 이동
+                tempImprovementPointsWrapper.appendChild(improvementPointsPanel); 
                 
-                // DOM에 임시 래퍼 삽입 및 캡처
                 reportHeader.parentNode.insertBefore(tempImprovementPointsWrapper, reportHeader.nextSibling); 
                 await new Promise(resolve => setTimeout(resolve, 50)); 
 
@@ -952,24 +932,20 @@
                     windowHeight: tempImprovementPointsWrapper.scrollHeight
                 }));
 
-                // 원본 DOM 복구 2 (보완점)
-                tempImprovementPointsWrapper.remove(); // 임시 래퍼 제거
+                tempImprovementPointsWrapper.remove(); 
                 
-                // 강점 패널과 보완점 패널을 원래 부모(feedbackDetails)에 복구
                 originalGoodPointsParent.appendChild(goodPointsPanel);
                 originalGoodPointsParent.appendChild(improvementPointsPanel);
                 
-                // **복구 완료:** reportHeader의 원래 자식들을 다시 삽입
                 reportHeader.insertBefore(reportSummaryTitle, originalReportSummaryTitleNextSibling);
                 reportHeader.insertBefore(feedbackDetails, originalFeedbackDetailsNextSibling);
-                await new Promise(resolve => setTimeout(resolve, 50)); // DOM 변경 적용 대기
+                await new Promise(resolve => setTimeout(resolve, 50)); 
                 
                 // --- V4.5: 3개 영역 분할 캡처 종료 ---
                 
                 // 4. 상세 코칭 제목 카드 캡처 
-                // 이 카드는 제목과 설명만 캡처하기 위해 자식 컨테이너를 숨겨야 합니다.
-                reviewContainer.style.display = 'none'; // 자식 컨테인 숨김
-                await new Promise(resolve => setTimeout(resolve, 50)); // DOM 변경 적용 대기
+                reviewContainer.style.display = 'none'; 
+                await new Promise(resolve => setTimeout(resolve, 50)); 
                 
                 canvases.push(await html2canvas(detailedReviewTitleCard, { 
                     scale: 2, 
@@ -978,41 +954,67 @@
                     windowHeight: detailedReviewTitleCard.scrollHeight
                 }));
                 
-                reviewContainer.style.display = 'block'; // 자식 컨테이너 다시 보임
-                await new Promise(resolve => setTimeout(resolve, 50)); // DOM 변경 적용 대기
+                reviewContainer.style.display = 'block'; 
+                await new Promise(resolve => setTimeout(resolve, 50)); 
 
-                // 5. 개별 리뷰 항목들 (.review-card) 캡처 (이전 V4.4 로직 유지)
+                // 5. 개별 리뷰 항목들 (.review-card) 캡처
                 for (const card of accordions) {
                     const canvas = await html2canvas(card, {
-                        scale: 2, // 고해상도 캡처
+                        scale: 2, 
                         useCORS: true,
-                        // 개별 카드 기준으로 캡처 (스크롤 높이 기준)
                         windowWidth: card.scrollWidth,
                         windowHeight: card.scrollHeight
                     });
                     canvases.push(canvas);
                 }
 
-                // --- [v4.9] PDF 생성 로직 (B안 적용) ---
-                // --- [v4.10] 폰트 지정 추가 ---
+                // --- [v4.11] PDF 생성 및 폰트 등록 (확실한 방법) ---
                 const pdf = new jsPDF({
                     orientation: 'p',
                     unit: 'px',
                 });
         
+                // [v4.11] 1. 폰트 파일을 직접 fetch (네트워크 요청)
+                // (참고: https://cdn.jsdelivr.net/font-nanum/1.0/nanumgothic/v3/NanumGothic-Regular.ttf)
+                const fontUrl = 'https://cdn.jsdelivr.net/font-nanum/1.0/nanumgothic/v3/NanumGothic-Regular.ttf';
+                const fontResponse = await fetch(fontUrl);
+                if (!fontResponse.ok) {
+                    throw new Error(`한글 폰트 파일(${fontUrl})을 다운로드하는데 실패했습니다.`);
+                }
+                const fontData = await fontResponse.arrayBuffer(); // ArrayBuffer로 받기
+
+                // [v4.11] 2. ArrayBuffer를 Base64 문자열로 변환 (jsPDF VFS 등록용)
+                let binary = '';
+                const bytes = new Uint8Array(fontData);
+                const len = bytes.byteLength;
+                for (let i = 0; i < len; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                const fontBase64 = btoa(binary);
+
+                // [v4.11] 3. jsPDF의 가상 파일 시스템(VFS)에 폰트 등록
+                const fontFileName = 'NanumGothic-Regular.ttf';
+                const fontName = 'NanumGothic'; // PDF 내부에서 사용할 폰트 이름
+                pdf.addFileToVFS(fontFileName, fontBase64);
+                pdf.addFont(fontFileName, fontName, 'normal');
+                
+                // [v4.11] 4. 등록된 폰트를 기본 폰트로 설정
+                pdf.setFont(fontName, 'normal');
+                // --- [v4.11] 폰트 등록 완료 ---
+
+
                 let pdfWidth = pdf.internal.pageSize.getWidth();
-                const imagePageMargin = 20; // [v4.9] 이미지 페이지(캡처본) 여백
-                const textPageMargin = 40;  // [v4.9] 텍스트 페이지 여백 (더 넓게)
+                const imagePageMargin = 20; 
+                const textPageMargin = 40;  
 
                 // --- [v4.9] B안: 1페이지에 AI가 문단 나눈 원본 텍스트 삽입 ---
                 const usableTextWidth = pdfWidth - (textPageMargin * 2);
 
-                // [v4.10] PDF 한글 깨짐 수정: 로드된 'NanumGothic' 폰트 지정
-                pdf.setFont('NanumGothic', 'normal'); 
+                // [v4.10] 폰트 지정 (v4.11에서 이미 위에서 setFont를 수행함)
+                // pdf.setFont('NanumGothic', 'normal'); // ⬅️ v4.11: 이미 위에서 설정됨
                 
-                pdf.setFontSize(10); // 가독성을 위한 폰트 크기 설정
+                pdf.setFontSize(10); 
                 
-                // .text() 함수는 \n을 인식하며, maxWidth 옵션으로 자동 줄바꿈(word-wrap) 처리
                 pdf.text(formattedOriginalText, textPageMargin, textPageMargin, { 
                     maxWidth: usableTextWidth 
                 });
@@ -1026,14 +1028,11 @@
                     const imgHeight = canvas.height;
                     const ratio = imgHeight / imgWidth;
                     
-                    // PDF 내부 이미지 너비를 페이지 너비에서 좌우 여백을 뺀 값으로 설정
                     const pdfImgWidth = pdfWidth - (imagePageMargin * 2);
                     const pdfImgHeight = pdfImgWidth * ratio;
         
-                    // [v4.9] B안: 1페이지(텍스트)가 이미 있으므로, 모든 캡처본은 새 페이지에 추가
                     pdf.addPage();
         
-                    // 이미지를 페이지에 추가 (상단 여백 적용)
                     pdf.addImage(imgData, 'PNG', imagePageMargin, imagePageMargin, pdfImgWidth, pdfImgHeight);
                 });
                 // --- [v4.9] B안: PDF 생성 완료 ---
@@ -1044,31 +1043,26 @@
                 console.error('Error generating PDF:', error);
                 showError('PDF 생성 중 오류가 발생했습니다: ' + error.message);
                 
-                // 오류 발생 시 복구 로직 (finally 블록과 중복되지만 안전을 위해)
                 const reviewContainer = document.getElementById('detailed-review-container');
                 if(reviewContainer.style.display === 'none') {
                     reviewContainer.style.display = 'block';
                 }
                 
-                // V4.6 복구 로직: Node 참조 변수들을 다시 삽입 (null이 아닌 경우에만)
                 const reportHeader = reportSection.querySelector('.main-card.report-header');
 
-                // 원본 요소들이 DOM 밖에 있다면 다시 삽입 시도
                 if(!reportHeader.contains(reportSummaryTitle) && reportSummaryTitle) reportHeader.appendChild(reportSummaryTitle);
                 if(!reportHeader.contains(feedbackDetails) && feedbackDetails) reportHeader.appendChild(feedbackDetails);
                 
                 if(feedbackDetails.contains(goodPointsPanel) && !feedbackDetails.contains(improvementPointsPanel) && improvementPointsPanel) {
-                     feedbackDetails.appendChild(improvementPointsPanel); // 보완점만 누락된 경우
+                     feedbackDetails.appendChild(improvementPointsPanel); 
                 }
                 if(!feedbackDetails.contains(goodPointsPanel) && goodPointsPanel) {
-                    // 강점 패널이 없는 경우 (순서대로 다시 삽입)
                     const tempFeedbackDetails = document.createElement('div');
                     tempFeedbackDetails.appendChild(goodPointsPanel);
                     tempFeedbackDetails.appendChild(improvementPointsPanel);
                     feedbackDetails.innerHTML = tempFeedbackDetails.innerHTML;
                 }
                 
-                // 임시 래퍼 제거 (혹시 남아있다면)
                 document.querySelectorAll('.report-header-temp').forEach(el => el.remove());
 
             } finally {
@@ -1076,14 +1070,12 @@
                 accordions.forEach((acc, index) => {
                     acc.open = originalOpenStates[index];
                     
-                    // [v4.6] 요청 2: 헤더 텍스트도 원래대로 복원
                     const h4 = acc.querySelector('.review-card-header h4');
                     if (h4) {
                         h4.innerHTML = originalHeaderTexts[index];
                     }
                 });
 
-                // 상세 코칭 제목 카드 처리 후 숨겼던 컨테이너를 복구
                 const reviewContainer = document.getElementById('detailed-review-container');
                 if(reviewContainer.style.display === 'none') {
                     reviewContainer.style.display = 'block';
