@@ -1,11 +1,11 @@
 // choijihoon9988-sudo/jjokegi-master/Jjokegi-Master-cf08a48a234322a7392f340a45fdc977e1ba0e13/script.js
+// [v4.12] PDF 1페이지 텍스트 자동 페이지 넘김 및 ** 마크다운 제거
+// - handleDownloadPDF: 1페이지(원본 텍스트) 렌더링 시, pdf.text(..., {maxWidth}) 대신 pdf.splitTextToSize()와 for 루프를 사용.
+// - handleDownloadPDF: Y 좌표(currentY)가 페이지 높이(pageHeight) - 마진을 넘는지 확인하여 pdf.addPage()를 동적으로 호출. (요청 1)
+// - handleDownloadPDF: 텍스트 렌더링 전, formattedOriginalText.replace(/\*\*/g, '')를 적용하여 ** 제거. (요청 2)
 // [v4.11] PDF 한글 깨짐 문제 해결 (확실한 방법)
-// - handleDownloadPDF 함수에 .ttf 폰트 파일을 직접 fetch/Base64 변환 후 VFS에 등록하는 로직 추가
 // [v4.10] PDF 한글 깨짐 수정: handleDownloadPDF 함수에 setFont('NanumGothic') 추가
 // [v4.9] PDF 저장 기능 (B안) 적용: AI가 문단 나눈 원본 텍스트를 1페이지에 삽입
-// [v4.9] SPLIT_PROMPT 수정 (Array -> Object 반환: { chunks: [], formatted_text: "..." })
-// [v4.9] handleStartSplit 수정 (AI 객체 응답 파싱)
-// [v4.9] handleDownloadPDF 수정 (1페이지 텍스트 삽입)
 // [v4.6] 요청 1: 프로그레스 바 기능 적용 (JS)
 // [v4.6] 요청 2: 아코디언 헤더 텍스트 토글 기능 적용 (JS)
 // [v4.5] API 400 오류 수정 (safetySettings 오타)
@@ -800,7 +800,7 @@
              throw new Error(`API 호출이 ${maxRetries}번의 재시도 후에도 실패했습니다.`);
         }
 
-        // --- [v4.9] PDF 다운로드 기능 (B안 적용: 1페이지 텍스트 삽입) ---
+        // --- [v4.12] PDF 다운로드 기능 (요청 1, 2 반영) ---
         // --- [v4.11] PDF 한글 깨짐 수정 (fetch/btoa/VFS 등록 방식) ---
         async function handleDownloadPDF() {
             const { jsPDF } = window.jspdf;
@@ -1007,21 +1007,41 @@
                 const imagePageMargin = 20; 
                 const textPageMargin = 40;  
 
-                // --- [v4.9] B안: 1페이지에 AI가 문단 나눈 원본 텍스트 삽입 ---
+                // --- [v4.12] PDF 1페이지 (원본 텍스트) 자동 페이지 넘김 및 마크다운 제거 ---
                 const usableTextWidth = pdfWidth - (textPageMargin * 2);
-
-                // [v4.10] 폰트 지정 (v4.11에서 이미 위에서 setFont를 수행함)
-                // pdf.setFont('NanumGothic', 'normal'); // ⬅️ v4.11: 이미 위에서 설정됨
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const topMargin = textPageMargin;
+                const bottomMargin = textPageMargin;
                 
-                pdf.setFontSize(10); 
+                pdf.setFontSize(10);
+                const lineHeight = pdf.getLineHeight(); // 10pt 폰트의 줄 높이 가져오기
                 
-                pdf.text(formattedOriginalText, textPageMargin, textPageMargin, { 
-                    maxWidth: usableTextWidth 
-                });
-                // --- [v4.9] 1페이지 완료 ---
+                // [v4.12] 요청 2: ** 마크다운 제거
+                const cleanedTextForPDF = formattedOriginalText.replace(/\*\*/g, '');
+
+                // [v4.12] 요청 1: 텍스트를 너비에 맞게 줄(lines)로 분할
+                const lines = pdf.splitTextToSize(cleanedTextForPDF, usableTextWidth);
+                
+                let currentY = topMargin;
+
+                for (let i = 0; i < lines.length; i++) {
+                    // [v4.12] 요청 1: 다음 줄이 페이지 하단 마진을 넘는지 확인
+                    // (currentY + lineHeight)는 다음 줄이 시작될 Y 좌표
+                    if (currentY + lineHeight > pageHeight - bottomMargin && i > 0) { 
+                        pdf.addPage();       // 새 페이지 추가
+                        currentY = topMargin; // Y 좌표를 상단 마진으로 리셋
+                    }
+                    
+                    // 현재 줄 텍스트 출력
+                    pdf.text(lines[i], textPageMargin, currentY);
+                    
+                    // Y 좌표(커서)를 다음 줄로 이동
+                    currentY += lineHeight;
+                }
+                // --- [v4.12] 1페이지 (및 그 이후) 텍스트 출력 완료 ---
 
 
-                // --- [v4.9] B안: 2페이지부터 캡처본(Canvas) 삽입 ---
+                // --- [v4.9] B안: 캡처본(Canvas) 삽입 (새 페이지부터 시작) ---
                 canvases.forEach((canvas, index) => {
                     const imgData = canvas.toDataURL('image/png');
                     const imgWidth = canvas.width;
