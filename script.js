@@ -1,4 +1,5 @@
 // choijihoon9988-sudo/jjokegi-master/Jjokegi-Master-9476ee9aa0b5faefd51ff59927133e26c8850901/script.js
+// [v4.4] safeHtml 함수 수정
 // --- AI CONFIGURATION ---
         // !!! 중요 !!!: 테스트를 위해 실제 Google AI Studio에서 발급받은 API 키를 "..." 안에 붙여넣으세요.
         const GEMINI_API_KEY = "AIzaSyCVTLte-n_F-83vTq3P1Fc16NzGXdKaIYI"; // ⬅️ 여기에 실제 API 키를 입력하세요.
@@ -629,7 +630,7 @@
                                 { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
                                 { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
                                 { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                                { category: "HARM_CATEGORY_DANGSROUS_CONTENT", threshold: "BLOCK_NONE" }
                             ]
                         })
                     });
@@ -989,16 +990,20 @@
 
         // Helper function for safe HTML display
         function safeHtml(text) {
-// ... (이하 내용은 이전과 동일) ...
+          // [v4.4 수정] 피드백 #2 반영: AI가 출력하는 마크다운(**) 제거
           if (typeof text !== 'string') return '';
-          return text.replace(/&/g, "&amp;")
-                     .replace(/</g, "&lt;")
-                     .replace(/>/g, "&gt;")
-                     .replace(/"/g, "&quot;")
-                     .replace(/'/g, "&#039;");
+        
+          // 1. 별표(Bold) 마크다운을 먼저 제거합니다.
+          let cleanedText = text.replace(/\*\*/g, '');
+    
+          // 2. HTML 이스케이프 처리를 합니다.
+          return cleanedText.replace(/&/g, "&amp;")
+                            .replace(/</g, "&lt;")
+                            .replace(/>/g, "&gt;")
+                            .replace(/"/g, "&quot;")
+                            .replace(/'/g, "&#039;");
         }
 
         // 초기 로드
         updateCharCounter();
         updateButtonState(); // [v4.0] 1단계, 2단계 버튼 상태 모두 초기화
-
