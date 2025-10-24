@@ -232,13 +232,43 @@ header p {
     /* [v4.2] 요청 2: '이전' 버튼과 겹치지 않도록 패딩 추가 */
     padding-top: 24px;
 }
-#progress-indicator {
-    text-align: center;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--primary-color);
-    margin-bottom: 24px;
+
+/* --- [v4.6] 요청 1: 프로그레스 바 스타일 --- */
+#progress-container {
+    width: 100%;
+    margin-bottom: 24px; /* 기존 progress-indicator의 마진 */
 }
+#progress-text-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+#progress-percentage {
+    font-weight: 700;
+    color: var(--primary-color); /* 기존 progress-indicator의 색상 */
+}
+#progress-count {
+    font-weight: 500;
+    color: #666;
+}
+#progress-bar-background {
+    width: 100%;
+    height: 8px;
+    background-color: var(--border-color);
+    border-radius: 4px;
+    overflow: hidden; /* 내부 바가 둥근 모서리를 넘지 않도록 */
+}
+#progress-bar-foreground {
+    width: 0%; /* JS로 제어 */
+    height: 100%;
+    background-color: var(--primary-color);
+    border-radius: 4px;
+    transition: width 0.3s ease-out; /* 부드러운 너비 변경 애니메이션 */
+}
+/* --- [END v4.6] 프로그레스 바 --- */
+
 
 /* 훈련 카드 (단일) */
 .chunk-card {
@@ -588,4 +618,3 @@ footer {
 
     /* [v4.2] 요청 2: .analysis-buttons 모바일 스타일 삭제 */
 }
-

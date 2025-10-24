@@ -1,4 +1,6 @@
-// choijihoon9988-sudo/jjokegi-master/Jjokegi-Master-9476ee9aa0b5faefd51ff59927133e26c8850901/script.js
+// choijihoon9988-sudo/jjokegi-master/Jjokegi-Master-cf08a48a234322a7392f340a45fdc977e1ba0e13/script.js
+// [v4.6] 요청 1: 프로그레스 바 기능 적용 (JS)
+// [v4.6] 요청 2: 아코디언 헤더 텍스트 토글 기능 적용 (JS)
 // [v4.5] API 400 오류 수정 (safetySettings 오타)
 // --- AI CONFIGURATION ---
         // !!! 중요 !!!: 테스트를 위해 실제 Google AI Studio에서 발급받은 API 키를 "..." 안에 붙여넣으세요.
@@ -152,7 +154,12 @@
         const startSplitButton = document.getElementById('start-split-button');
         
         const analysisInputsContainer = document.getElementById('analysis-inputs');
-        const progressIndicator = document.getElementById('progress-indicator');
+        
+        // [v4.6] 요청 1: 프로그레스 바 UI 요소로 변경
+        const progressPercentage = document.getElementById('progress-percentage');
+        const progressCount = document.getElementById('progress-count');
+        const progressBarForeground = document.getElementById('progress-bar-foreground');
+
         const nextChunkButton = document.getElementById('next-chunk-button');
         const prevChunkButton = document.getElementById('prev-chunk-button'); // [v4.1] NEW
         
@@ -303,6 +310,7 @@
         }
 
         // [v2.0] 현재 훈련 청크 표시 (포커스 모드 UI)
+        // [v4.6] 요청 1: 프로그레스 바 로직 적용
         function displayCurrentChunk() {
             if (currentChunkIndex >= originalChunks.length) return;
 
@@ -323,7 +331,16 @@
                 </div>
             `;
             
-            progressIndicator.textContent = `${currentChunkIndex + 1} / ${originalChunks.length} 항목 훈련 중`;
+            // [v4.6] 요청 1: 프로그레스 바 업데이트
+            const totalChunks = originalChunks.length;
+            // 현재 인덱스(currentChunkIndex)가 0부터 시작하므로, '완료된' 항목 수는 currentChunkIndex와 동일.
+            const completedChunks = currentChunkIndex; 
+            const percentage = totalChunks > 0 ? Math.round((completedChunks / totalChunks) * 100) : 0;
+            
+            progressPercentage.textContent = `${percentage}% 완료`;
+            progressCount.textContent = `(${completedChunks} / ${totalChunks})`;
+            progressBarForeground.style.width = `${percentage}%`;
+
 
             if (currentChunkIndex === originalChunks.length - 1) {
                 nextChunkButton.textContent = '결과 리포트 보기';
@@ -432,6 +449,7 @@
 
         // --- [v2.1] Display Feedback Report (v3.0 버튼 표시 로직 추가) ---
         // --- [v4.2 수정] 아코디언 UI (details, summary) 및 모달 제거, 원본 텍스트 즉시 표시 ---
+        // --- [v4.6 수정] 요청 2: 아코디언 헤더 텍스트 토글 기능 적용 ---
          function displayFeedbackReport(feedback) {
             if (typeof feedback !== 'object' || feedback === null || !feedback.detailed_review) {
                 console.error("Invalid feedback format:", feedback);
@@ -470,19 +488,22 @@
                  const rawFeedback = review.specific_feedback;
                  const formattedFeedback = formatFeedbackText(rawFeedback);
                  
-                 // [v4.2] 요청 1: 헤더 텍스트에 원본 텍스트 전체를 포함
-                 const headerText = `📄 훈련 #${index + 1}: ${safeHtml(review.original_chunk)}`;
+                 // [v4.6] 요청 2: 헤더 텍스트 (축약/전체) 준비
+                 const originalChunkText = review.original_chunk;
+                 const fullHeaderText = safeHtml(`📄 훈련 #${index + 1}: ${originalChunkText}`);
+                 // 50자로 축약
+                 const truncatedHeaderText = safeHtml(`📄 훈련 #${index + 1}: ${truncateText(originalChunkText, 50)}`);
 
-                 // [v4.2 수정] <details>와 <summary> 구조는 유지 (요청 3)
-                 // [v4.2 수정] 모달 관련 속성(data-full-text, review-header-clickable) 제거
-                 // [v4.2 수정] .review-card-body 내부에서 originalTextBoxHtml 제거
+
+                 // [v4.2] <details>와 <summary> 구조
+                 // [v4.6] <h4>에 data 속성 추가, 기본 텍스트는 축약본
                  const cardHtml = `
                     <details class="review-card">
                         <summary class="review-card-header">
-                            <h4>${headerText}</h4>
+                            <h4 data-full-text="${fullHeaderText}" data-truncated-text="${truncatedHeaderText}">
+                                ${truncatedHeaderText} </h4>
                         </summary>
                         <div class="review-card-body">
-                            <!-- [v4.2] 원본 텍스트 박스 제거됨 -->
                             <div class="user-analysis-box">
                                 <h5>나의 훈련 내용</h5>
                                 ${analysisHtml}
@@ -497,10 +518,18 @@
                  detailedReviewContainer.innerHTML += cardHtml;
              });
 
+            // [v4.6] 요청 2: 아코디언 토글 이벤트 리스너 추가
+            addAccordionToggleListeners();
+
             // [추가] 첫 번째 아코디언 항목은 기본으로 열어둠
             const firstDetail = detailedReviewContainer.querySelector('.review-card');
             if(firstDetail) {
                 firstDetail.open = true;
+                // [v4.6] 첫 번째 항목이 기본으로 '열려' 있으므로, 헤더 텍스트를 '전체'로 강제 업데이트
+                const firstH4 = firstDetail.querySelector('.review-card-header h4');
+                if (firstH4) {
+                    firstH4.innerHTML = firstH4.dataset.fullText;
+                }
             }
 
 
@@ -514,6 +543,27 @@
 
              // [v4.1] html 구조 변경으로, 이제 '다음 행동' 카드 내부의 버튼이 항상 표시됨
              generatePromptButton.classList.remove('hidden');
+        }
+
+        // [v4.6] 요청 2: 아코디언 토글 시 헤더 텍스트 변경
+        function addAccordionToggleListeners() {
+            const accordions = detailedReviewContainer.querySelectorAll('.review-card');
+            
+            accordions.forEach(accordion => {
+                // 'toggle' 이벤트는 <details> 요소의 열림/닫힘 상태가 변경될 때 발생
+                accordion.addEventListener('toggle', (event) => {
+                    const h4 = event.target.querySelector('.review-card-header h4');
+                    if (!h4) return; // 방어 코드
+
+                    if (event.target.open) {
+                        // 1. 아코디언이 열렸을 때
+                        h4.innerHTML = h4.dataset.fullText;
+                    } else {
+                        // 2. 아코디언이 닫혔을 때
+                        h4.innerHTML = h4.dataset.truncatedText;
+                    }
+                });
+            });
         }
 
 
@@ -561,6 +611,7 @@
 
 
         // --- [v4.0] Reset UI Function (단계별 UI 반영) ---
+        // --- [v4.6] 요청 1: 프로그레스 바 리셋 ---
          function resetUI() {
 // ... (이하 내용은 이전과 동일) ...
             // [v4.0] 1단계(입력) 섹션만 표시
@@ -588,7 +639,11 @@
             analysisInputsContainer.innerHTML = '';
             detailedReviewContainer.innerHTML = '';
             
-            progressIndicator.textContent = '';
+            // [v4.6] 요청 1: 프로그레스 바 리셋
+            if (progressPercentage) progressPercentage.textContent = '0% 완료';
+            if (progressCount) progressCount.textContent = '(0 / 0)';
+            if (progressBarForeground) progressBarForeground.style.width = '0%';
+
             nextChunkButton.textContent = '다음 ➔';
             nextChunkButton.disabled = false;
             prevChunkButton.classList.add('hidden'); // [v4.1] '이전' 버튼 숨김 처리
@@ -719,9 +774,20 @@
         
             // [개선 1] 아코디언의 원래 'open' 상태를 저장하고 강제 열기
             const originalOpenStates = [];
+            // [v4.6] 요청 2: 헤더의 '텍스트' 상태도 저장
+            const originalHeaderTexts = []; 
+            
             accordions.forEach((acc, index) => {
                 originalOpenStates[index] = acc.open;
-                acc.open = true; 
+                
+                // [v4.6] 헤더 텍스트(innerHTML)와 open 상태를 동기화
+                const h4 = acc.querySelector('.review-card-header h4');
+                if (h4) {
+                    originalHeaderTexts[index] = h4.innerHTML; // 현재 텍스트(축약/전체) 저장
+                    h4.innerHTML = h4.dataset.fullText; // PDF에는 항상 '전체' 텍스트
+                }
+                
+                acc.open = true; // 강제 열기
             });
         
             try {
@@ -947,6 +1013,12 @@
                 // --- 캡처 후 아코디언 상태 원래대로 복원 ---
                 accordions.forEach((acc, index) => {
                     acc.open = originalOpenStates[index];
+                    
+                    // [v4.6] 요청 2: 헤더 텍스트도 원래대로 복원
+                    const h4 = acc.querySelector('.review-card-header h4');
+                    if (h4) {
+                        h4.innerHTML = originalHeaderTexts[index];
+                    }
                 });
 
                 // 상세 코칭 제목 카드 처리 후 숨겼던 컨테이너를 복구
@@ -989,6 +1061,18 @@
         // --- [v4.1 요청 2] 모달 제어 로직 전체 삭제 ---
 
 
+        // [v4.6] 요청 2: 텍스트 축약 헬퍼
+        function truncateText(text, maxLength = 50) {
+            if (typeof text !== 'string') return '';
+            if (text.length <= maxLength) {
+                return text;
+            }
+            // '...'를 포함하여 maxLength를 넘지 않도록 (예: 50자면 47자 + '...')
+            // 사용자 요청은 50자로 축약하고 '...' -> 50자 + '...'로 이해함.
+            return text.substring(0, maxLength) + '...';
+        }
+
+
         // Helper function for safe HTML display
         function safeHtml(text) {
           // [v4.4 수정] 피드백 #2 반영: AI가 출력하는 마크다운(**) 제거
@@ -1008,4 +1092,3 @@
         // 초기 로드
         updateCharCounter();
         updateButtonState(); // [v4.0] 1단계, 2단계 버튼 상태 모두 초기화
-
