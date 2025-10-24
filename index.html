@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>쪼개기 마스터 v4.0</title>
+    <title>쪼개기 마스터 v4.1</title> <!-- [v4.1] 버전 업데이트 -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -58,7 +58,11 @@
             <h2>S-Class: 집중 훈련</h2>
             <p id="progress-indicator">0 / 0 항목 훈련 중</p>
             <div id="analysis-inputs"></div>
-            <button id="next-chunk-button" class="btn">다음 ➔</button>
+            <!-- [v4.1 수정] 요청 1: '이전' 버튼 추가 및 버튼 래퍼 생성 -->
+            <div class="analysis-buttons">
+                <button id="prev-chunk-button" class="btn btn-secondary hidden">← 이전</button>
+                <button id="next-chunk-button" class="btn">다음 ➔</button>
+            </div>
         </div>
 
         <div id="feedback-report-section" class="hidden">
@@ -107,13 +111,8 @@
         </div>
         </div> 
     
-    <div id="chunk-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <button id="modal-close-button" class="modal-close" type="button" aria-label="닫기">&times;</button>
-            <h3>📄 원본 텍스트 전체</h3>
-            <div id="modal-chunk-text"></div>
-        </div>
-    </div>
+    <!-- [v4.1 수정] 요청 2: 불필요한 청크 모달 HTML 삭제 -->
+    
     <footer>
         <p>© 2025 Jjokegi Master. 이상한마케팅 구성원 분들을 위해 제작되었습니다.</p>
     </footer>

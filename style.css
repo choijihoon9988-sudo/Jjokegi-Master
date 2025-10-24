@@ -271,6 +271,18 @@ textarea.analysis-input.invalid {
     border: 1px solid var(--danger-color);
     box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2);
 }
+
+/* [v4.1] 요청 1: 훈련 섹션 이전/다음 버튼 래퍼 */
+.analysis-buttons {
+    display: flex;
+    gap: 16px;
+    margin-top: 32px; /* .btn의 기본 상단 마진을 래퍼로 이동 */
+}
+.analysis-buttons .btn,
+.analysis-buttons .btn-secondary {
+    margin-top: 0; /* .btn의 기본 상단 마진 제거 */
+    flex: 1; /* 버튼이 공간을 균등하게 차지 */
+}
 /* --- [END v2.0] 훈련 섹션 --- */
 
 
@@ -381,14 +393,8 @@ textarea.analysis-input.invalid {
     display: inline-block; /* 클릭 영역을 위해 */
 }
 
-/* [v4.1] (원본 보기) 힌트 텍스트 스타일 */
-.view-original-hint {
-    font-weight: 500;
-    font-size: 13px;
-    color: #888;
-    margin-left: 8px;
-    display: inline-block; /* h4 옆에 붙도록 */
-}
+/* [v4.1] (원본 보기) 힌트 텍스트 스타일 삭제 */
+
 
 /* [추가] 아코디언이 열렸을 때의 스타일 */
 .review-card[open] {
@@ -412,6 +418,17 @@ textarea.analysis-input.invalid {
 /* --- [끝] 아코디언 UI 수정 --- */
 
 .review-card-body .original-text-container { display: none; }
+
+/* [v4.1] 요청 2: 1:1 코칭 - 원본 텍스트 박스 스타일 추가 */
+.original-text-box {
+    background-color: var(--light-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+}
+.original-text-box h5 {
+    color: #555; /* 중립적인 텍스트 색상 */
+}
 
 .user-analysis-box, .coach-feedback-box {
     background-color: var(--white-color);
@@ -522,71 +539,7 @@ footer {
     to { opacity: 1; }
 }
 
-/* --- [추가] 원본 텍스트 뷰어 모달 --- */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 24px;
-    animation: fadeIn 0.3s ease;
-}
-
-.modal-content {
-    background: var(--white-color);
-    border-radius: 16px;
-    padding: 32px;
-    max-width: 600px;
-    width: 100%;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    position: relative;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-sizing: border-box; /* 패딩 포함 크기 계산 */
-}
-
-.modal-content h3 {
-    margin-top: 0;
-    margin-bottom: 16px;
-    font-size: 20px;
-    font-weight: 700;
-}
-
-#modal-chunk-text {
-    background: var(--light-bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 20px;
-    font-size: 16px;
-    line-height: 1.7;
-    word-break: keep-all;
-    max-height: 50vh; /* 모달 내용이 길어질 경우 스크롤 */
-    overflow-y: auto;
-}
-
-.modal-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: none;
-    border: none;
-    font-size: 28px;
-    font-weight: 700;
-    color: #888;
-    cursor: pointer;
-    line-height: 1;
-    padding: 8px;
-}
-.modal-close:hover {
-    color: #333;
-}
-/* --- [끝] 모달 --- */
+/* --- [v4.1] 요청 2: 원본 텍스트 뷰어 모달 스타일 전체 삭제 --- */
 
 
 /* 모바일 반응형 */
@@ -630,8 +583,9 @@ footer {
        기존 덮어쓰기(line 622-630)는 삭제되었습니다.
     */
 
-    /* 모달 모바일 */
-    .modal-content {
-        padding: 24px;
+    /* [v4.1] 훈련 섹션 버튼 모바일 (세로 쌓임) */
+    .analysis-buttons {
+        flex-direction: column;
+        gap: 12px;
     }
 }

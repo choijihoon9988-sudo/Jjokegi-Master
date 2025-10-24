@@ -152,6 +152,7 @@
         const analysisInputsContainer = document.getElementById('analysis-inputs');
         const progressIndicator = document.getElementById('progress-indicator');
         const nextChunkButton = document.getElementById('next-chunk-button');
+        const prevChunkButton = document.getElementById('prev-chunk-button'); // [v4.1] NEW
         
         const resetButton = document.getElementById('reset-button');
         const downloadPdfButton = document.getElementById('download-pdf-button');
@@ -204,6 +205,7 @@
 
         startSplitButton.addEventListener('click', handleStartSplit);
         nextChunkButton.addEventListener('click', handleNextChunk);
+        prevChunkButton.addEventListener('click', handlePrevChunk); // [v4.1] NEW
         resetButton.addEventListener('click', resetUI);
         downloadPdfButton.addEventListener('click', handleDownloadPDF);
         generatePromptButton.addEventListener('click', handleGeneratePrompt);
@@ -326,6 +328,32 @@
             } else {
                 nextChunkButton.textContent = '다음 ➔';
             }
+
+            // [v4.1] 요청 1: '이전' 버튼 표시/숨김 로직
+            if (currentChunkIndex > 0) {
+                prevChunkButton.classList.remove('hidden');
+            } else {
+                prevChunkButton.classList.add('hidden');
+            }
+        }
+
+        // [v4.1] 요청 1: 이전 훈련 항목으로 이동
+        function handlePrevChunk() {
+            // 현재 내용을 저장 (유효성 검사 없음)
+            const currentTextarea = analysisInputsContainer.querySelector('.analysis-input');
+            const analysisText = currentTextarea.value.trim();
+            
+            userAnalyses[currentChunkIndex] = {
+                original_chunk: originalChunks[currentChunkIndex],
+                user_analysis: analysisText
+            };
+            
+            // 인덱스 감소
+            if (currentChunkIndex > 0) {
+                currentChunkIndex--;
+                displayCurrentChunk();
+                window.scrollTo(0, 0);
+            }
         }
 
         // [v2.0] 다음 훈련 / 리포트 제출
@@ -401,7 +429,7 @@
         }
 
         // --- [v2.1] Display Feedback Report (v3.0 버튼 표시 로직 추가) ---
-        // --- [수정] 아코디언 UI (details, summary) 및 모달 속성 (data-full-text) 적용 ---
+        // --- [v4.1 수정] 아코디언 UI (details, summary) 및 모달 제거, 원본 텍스트 즉시 표시 ---
          function displayFeedbackReport(feedback) {
             if (typeof feedback !== 'object' || feedback === null || !feedback.detailed_review) {
                 console.error("Invalid feedback format:", feedback);
@@ -440,17 +468,27 @@
                  const rawFeedback = review.specific_feedback;
                  const formattedFeedback = formatFeedbackText(rawFeedback);
                  
-                 // [v4.1] 헤더 텍스트 생성 (원본 보기 힌트 추가)
-                 const headerText = `📄 훈련 #${index + 1}: ${safeHtml(review.original_chunk.substring(0, 40))}... <span class="view-original-hint">(원본 보기)</span>`;
+                 // [v4.1] 요청 2: 헤더 텍스트 간소화 (원본 보기 힌트 제거)
+                 const headerText = `📄 훈련 #${index + 1}`;
 
-                 // [수정] <details>와 <summary>를 사용한 아코디언 구조로 변경
-                 //         <summary>에 data-full-text와 review-header-clickable 클래스 추가
+                 // [v4.1] 요청 2: 원본 텍스트 박스 HTML 생성
+                 const originalTextBoxHtml = `
+                    <div class="original-text-box">
+                        <h5>📄 원본 텍스트</h5>
+                        <p>${safeHtml(review.original_chunk)}</p>
+                    </div>
+                 `;
+
+                 // [v4.1 수정] <details>와 <summary> 구조는 유지 (요청 3)
+                 // [v4.1 수정] 모달 관련 속성(data-full-text, review-header-clickable) 제거
+                 // [v4.1 수정] .review-card-body 내부에 originalTextBoxHtml 추가
                  const cardHtml = `
                     <details class="review-card">
-                        <summary class="review-card-header review-header-clickable" data-full-text="${safeHtml(review.original_chunk)}">
+                        <summary class="review-card-header">
                             <h4>${headerText}</h4>
                         </summary>
                         <div class="review-card-body">
+                            ${originalTextBoxHtml} <!-- [v4.1] 원본 텍스트가 가장 위에 옴 -->
                             <div class="user-analysis-box">
                                 <h5>나의 훈련 내용</h5>
                                 ${analysisHtml}
@@ -557,6 +595,7 @@
             progressIndicator.textContent = '';
             nextChunkButton.textContent = '다음 ➔';
             nextChunkButton.disabled = false;
+            prevChunkButton.classList.add('hidden'); // [v4.1] '이전' 버튼 숨김 처리
 
             // [v4.0] 1단계, 2단계 버튼 상태 초기화
             updateButtonState();
@@ -947,55 +986,7 @@
         }
 
 
-        // --- [추가] 모달 제어 로직 ---
-        const modal = document.getElementById('chunk-modal');
-        const modalText = document.getElementById('modal-chunk-text');
-        const modalClose = document.getElementById('modal-close-button');
-
-        // 모달 여는 함수
-        function showChunkModal(fullText) {
-            modalText.innerHTML = safeHtml(fullText).replace(/\n/g, '<br>'); // 줄바꿈 유지
-            modal.classList.remove('hidden');
-        }
-
-        // 모달 닫는 함수
-        function hideChunkModal() {
-            modal.classList.add('hidden');
-        }
-
-        // 이벤트 리스너 (이벤트 위임 사용)
-        // .review-header-clickable는 동적으로 생성되므로 document에 리스너를 붙임
-        document.addEventListener('click', function(e) {
-            // 헤더 클릭 시
-            const header = e.target.closest('.review-header-clickable');
-            if (header) {
-                // <summary>의 기본 동작(아코디언 열기/닫기)이 실행된 *직후* 모달을 연다.
-                // (만약 summary 내부의 h4나 span을 클릭했다면 즉시 실행)
-                setTimeout(() => {
-                    // 아코디언이 열리거나 닫히는 동작과 모달이 동시에 뜨는 것을 방지
-                    // (사용자가 헤더의 텍스트 영역을 명확히 클릭했을 때만 모달이 뜨도록)
-                    // [v4.1] 클릭 타겟으로 .view-original-hint(span) 추가
-                    if (e.target.tagName === 'H4' || e.target.tagName === 'SUMMARY' || e.target.classList.contains('view-original-hint')) {
-                         // data-full-text 속성에서 원본 텍스트를 가져옴
-                        const fullText = header.dataset.fullText;
-                        if (fullText) {
-                            showChunkModal(fullText);
-                        }
-                    }
-                }, 50); // 50ms 딜레이로 summary 기본 동작과 충돌 방지
-            }
-
-            // 모달 닫기 버튼 클릭 시
-            if (e.target === modalClose) {
-                hideChunkModal();
-            }
-
-            // 모달 바깥 영역(overlay) 클릭 시
-            if (e.target === modal) {
-                hideChunkModal();
-            }
-        });
-        // --- [끝] 모달 제어 로직 ---
+        // --- [v4.1 요청 2] 모달 제어 로직 전체 삭제 ---
 
 
         // Helper function for safe HTML display
