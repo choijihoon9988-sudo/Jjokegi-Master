@@ -216,9 +216,21 @@ header p {
 .btn:disabled { background-color: #a0b9e8; cursor: not-allowed; }
 
 /* --- [v2.0] 훈련 섹션 (포커스 모드) --- */
+/* [v4.2] 요청 2: '이전' 버튼 포지셔닝을 위해 relative 추가 */
+#analysis-section {
+    position: relative;
+    /* [v4.2] main-card와 유사한 스타일 적용 (버튼 위치 기준) */
+    background-color: var(--white-color);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    margin-bottom: 40px;
+}
 #analysis-section h2 {
     text-align: center;
     margin-bottom: 12px;
+    /* [v4.2] 요청 2: '이전' 버튼과 겹치지 않도록 패딩 추가 */
+    padding-top: 24px;
 }
 #progress-indicator {
     text-align: center;
@@ -272,17 +284,7 @@ textarea.analysis-input.invalid {
     box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2);
 }
 
-/* [v4.1] 요청 1: 훈련 섹션 이전/다음 버튼 래퍼 */
-.analysis-buttons {
-    display: flex;
-    gap: 16px;
-    margin-top: 32px; /* .btn의 기본 상단 마진을 래퍼로 이동 */
-}
-.analysis-buttons .btn,
-.analysis-buttons .btn-secondary {
-    margin-top: 0; /* .btn의 기본 상단 마진 제거 */
-    flex: 1; /* 버튼이 공간을 균등하게 차지 */
-}
+/* [v4.2] 요청 2: .analysis-buttons 래퍼 스타일 삭제 */
 /* --- [END v2.0] 훈련 섹션 --- */
 
 
@@ -390,7 +392,10 @@ textarea.analysis-input.invalid {
 
 .review-card-header h4 {
     margin: 0; font-size: 17px; font-weight: 700;
-    display: inline-block; /* 클릭 영역을 위해 */
+    /* [v4.2] 요청 1: 긴 텍스트(원본 포함)를 위해 display: block으로 변경 */
+    display: block;
+    word-break: keep-all;
+    line-height: 1.6;
 }
 
 /* [v4.1] (원본 보기) 힌트 텍스트 스타일 삭제 */
@@ -419,16 +424,7 @@ textarea.analysis-input.invalid {
 
 .review-card-body .original-text-container { display: none; }
 
-/* [v4.1] 요청 2: 1:1 코칭 - 원본 텍스트 박스 스타일 추가 */
-.original-text-box {
-    background-color: var(--light-bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 20px;
-}
-.original-text-box h5 {
-    color: #555; /* 중립적인 텍스트 색상 */
-}
+/* [v4.2] 요청 1: .original-text-box 스타일 삭제 */
 
 .user-analysis-box, .coach-feedback-box {
     background-color: var(--white-color);
@@ -548,6 +544,8 @@ footer {
     header h1 { font-size: 32px; } /* [v4.0] */
     header p { font-size: 17px; }
     .main-card { padding: 24px; border-radius: 16px; } /* [v4.0] */
+    /* [v4.2] 훈련 섹션 모바일 패딩 */
+    #analysis-section { padding: 24px; border-radius: 16px; }
     .chunk-card { padding: 20px; }
     .feedback-panel { padding: 24px; }
     
@@ -567,6 +565,11 @@ footer {
     #course-section .step-title {
         padding-top: 20px;
     }
+    /* [v4.2] 요청 2: 훈련 섹션 h2 모바일 패딩 */
+    #analysis-section h2 {
+        padding-top: 20px;
+    }
+
 
     #text-input { height: 150px; }
     .course-options { flex-direction: column; }
@@ -583,9 +586,6 @@ footer {
        기존 덮어쓰기(line 622-630)는 삭제되었습니다.
     */
 
-    /* [v4.1] 훈련 섹션 버튼 모바일 (세로 쌓임) */
-    .analysis-buttons {
-        flex-direction: column;
-        gap: 12px;
-    }
+    /* [v4.2] 요청 2: .analysis-buttons 모바일 스타일 삭제 */
 }
+

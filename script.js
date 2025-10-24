@@ -9,6 +9,7 @@
 
         // --- 1. '해부학자' 프롬프트 (SPLIT_PROMPT v3.0) ---
         const SPLIT_PROMPT = (text, mode) => {
+// ... (이하 프롬프트 내용은 이전과 동일) ...
             const coreInstruction = `
                 You are 'The Scalpel', a master marketer and the author of 'Jjokegi Theory'. Your task is to dissect the provided text from a strategic marketing perspective.
                 Your mission is to deconstruct the text into its 'Minimum Viable Meaning Units' (전략적 최소 의미 단위).
@@ -429,7 +430,7 @@
         }
 
         // --- [v2.1] Display Feedback Report (v3.0 버튼 표시 로직 추가) ---
-        // --- [v4.1 수정] 아코디언 UI (details, summary) 및 모달 제거, 원본 텍스트 즉시 표시 ---
+        // --- [v4.2 수정] 아코디언 UI (details, summary) 및 모달 제거, 원본 텍스트 즉시 표시 ---
          function displayFeedbackReport(feedback) {
             if (typeof feedback !== 'object' || feedback === null || !feedback.detailed_review) {
                 console.error("Invalid feedback format:", feedback);
@@ -468,27 +469,19 @@
                  const rawFeedback = review.specific_feedback;
                  const formattedFeedback = formatFeedbackText(rawFeedback);
                  
-                 // [v4.1] 요청 2: 헤더 텍스트 간소화 (원본 보기 힌트 제거)
-                 const headerText = `📄 훈련 #${index + 1}`;
+                 // [v4.2] 요청 1: 헤더 텍스트에 원본 텍스트 전체를 포함
+                 const headerText = `📄 훈련 #${index + 1}: ${safeHtml(review.original_chunk)}`;
 
-                 // [v4.1] 요청 2: 원본 텍스트 박스 HTML 생성
-                 const originalTextBoxHtml = `
-                    <div class="original-text-box">
-                        <h5>📄 원본 텍스트</h5>
-                        <p>${safeHtml(review.original_chunk)}</p>
-                    </div>
-                 `;
-
-                 // [v4.1 수정] <details>와 <summary> 구조는 유지 (요청 3)
-                 // [v4.1 수정] 모달 관련 속성(data-full-text, review-header-clickable) 제거
-                 // [v4.1 수정] .review-card-body 내부에 originalTextBoxHtml 추가
+                 // [v4.2 수정] <details>와 <summary> 구조는 유지 (요청 3)
+                 // [v4.2 수정] 모달 관련 속성(data-full-text, review-header-clickable) 제거
+                 // [v4.2 수정] .review-card-body 내부에서 originalTextBoxHtml 제거
                  const cardHtml = `
                     <details class="review-card">
                         <summary class="review-card-header">
                             <h4>${headerText}</h4>
                         </summary>
                         <div class="review-card-body">
-                            ${originalTextBoxHtml} <!-- [v4.1] 원본 텍스트가 가장 위에 옴 -->
+                            <!-- [v4.2] 원본 텍스트 박스 제거됨 -->
                             <div class="user-analysis-box">
                                 <h5>나의 훈련 내용</h5>
                                 ${analysisHtml}
@@ -525,6 +518,7 @@
 
         // --- [v3.0] S급 성장 프롬프트 생성 (신규 함수) ---
         function handleGeneratePrompt() {
+// ... (이하 내용은 이전과 동일) ...
             if (!lastFeedback || !originalText || !userAnalyses) {
                 showError("데이터가 없습니다. 훈련을 먼저 완료해주세요.");
                 return;
@@ -567,6 +561,7 @@
 
         // --- [v4.0] Reset UI Function (단계별 UI 반영) ---
          function resetUI() {
+// ... (이하 내용은 이전과 동일) ...
             // [v4.0] 1단계(입력) 섹션만 표시
             inputSection.classList.remove('hidden');
             courseSection.classList.add('hidden'); // [v4.0] NEW
@@ -606,6 +601,7 @@
 
         // --- API CALL LOGIC (v1.2와 동일, 이미 강력함) ---
         async function callGeminiApi(prompt) {
+// ... (이하 내용은 이전과 동일) ...
             console.log("Sending prompt to API:", prompt);
 
             if (GEMINI_API_KEY === "AIzaSyCVTLte-n_F-83vTq3P1Fc16NzGXdKaIYI") {
@@ -708,6 +704,7 @@
 
         // --- [수정된 v4.6] PDF 다운로드 기능 (DOM 참조 오류 수정) ---
         async function handleDownloadPDF() {
+// ... (이하 내용은 이전과 동일) ...
             const { jsPDF } = window.jspdf;
             const reportSection = document.getElementById('feedback-report-section');
             
@@ -966,6 +963,7 @@
 
         // [v2.2] 피드백 텍스트 가독성 개선 헬퍼
         function formatFeedbackText(text) {
+// ... (이하 내용은 이전과 동일) ...
             if (!text) return '';
             // 1. 텍스트를 먼저 안전하게 이스케이프 처리합니다.
             let safeText = safeHtml(text);
@@ -991,6 +989,7 @@
 
         // Helper function for safe HTML display
         function safeHtml(text) {
+// ... (이하 내용은 이전과 동일) ...
           if (typeof text !== 'string') return '';
           return text.replace(/&/g, "&amp;")
                      .replace(/</g, "&lt;")
@@ -1002,3 +1001,4 @@
         // 초기 로드
         updateCharCounter();
         updateButtonState(); // [v4.0] 1단계, 2단계 버튼 상태 모두 초기화
+
