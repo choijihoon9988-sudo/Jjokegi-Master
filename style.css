@@ -530,23 +530,39 @@ textarea.analysis-input.invalid {
 /* --- [END v2.1] 피드백 리포트 --- */
 
 
-/* 동적 로더 스타일 */
+/* --- [v4.7] 로딩 스크린 UI 개선 --- */
 #dynamic-loader {
-    text-align: center; padding: 48px;
-    flex-direction: column; gap: 24px;
-    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 48px;
+    flex-direction: column;
+    /* gap: 24px; [v4.7] 스피너가 absolute가 되면서 제거 */
+    align-items: center;
+    justify-content: center;
     border-radius: 20px; /* [v4.0] */
+    position: relative; /* [v4.7] 스피너 위치 기준 */
+    min-height: 200px; /* [v4.7] 텍스트가 중앙에 오도록 최소 높이 확보 */
+    box-sizing: border-box; /* [v4.7] 패딩 계산 일관성 */
 }
 .spinner {
-    border: 6px solid #f3f3f3;
-    border-top: 6px solid var(--primary-color);
-    border-radius: 50%; width: 50px; height: 50px;
+    /* [v4.7] 크기 축소 */
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
     animation: spin 1s linear infinite;
+    /* [v4.7] 왼쪽 상단으로 이동 */
+    position: absolute;
+    top: 48px;
+    left: 48px;
 }
 #loader-text {
-    font-size: 18px; font-weight: 600;
-    color: var(--text-color); margin: 0;
+    font-size: 19px; /* [v4.7] 폰트 크기 증가 */
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
 }
+/* --- [END v4.7] --- */
 
 footer {
     text-align: center; padding: 20px;
@@ -598,6 +614,19 @@ footer {
     /* [v4.2] 요청 2: 훈련 섹션 h2 모바일 패딩 */
     #analysis-section h2 {
         padding-top: 20px;
+    }
+
+    /* [v4.7] 로더 모바일 */
+    #dynamic-loader {
+        padding: 24px;
+        min-height: 150px;
+    }
+    .spinner {
+        top: 24px;
+        left: 24px;
+    }
+    #loader-text {
+        font-size: 17px;
     }
 
 
