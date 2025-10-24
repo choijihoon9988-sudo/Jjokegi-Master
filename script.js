@@ -1,4 +1,5 @@
 // choijihoon9988-sudo/jjokegi-master/Jjokegi-Master-cf08a48a234322a7392f340a45fdc977e1ba0e13/script.js
+// [v4.10] PDF 한글 깨짐 수정: handleDownloadPDF 함수에 setFont('NanumGothic') 추가
 // [v4.9] PDF 저장 기능 (B안) 적용: AI가 문단 나눈 원본 텍스트를 1페이지에 삽입
 // [v4.9] SPLIT_PROMPT 수정 (Array -> Object 반환: { chunks: [], formatted_text: "..." })
 // [v4.9] handleStartSplit 수정 (AI 객체 응답 파싱)
@@ -798,6 +799,7 @@
         }
 
         // --- [v4.9] PDF 다운로드 기능 (B안 적용: 1페이지 텍스트 삽입) ---
+        // --- [v4.10] PDF 한글 깨짐 수정 ---
         async function handleDownloadPDF() {
             const { jsPDF } = window.jspdf;
             const reportSection = document.getElementById('feedback-report-section');
@@ -992,6 +994,7 @@
                 }
 
                 // --- [v4.9] PDF 생성 로직 (B안 적용) ---
+                // --- [v4.10] 폰트 지정 추가 ---
                 const pdf = new jsPDF({
                     orientation: 'p',
                     unit: 'px',
@@ -1003,6 +1006,10 @@
 
                 // --- [v4.9] B안: 1페이지에 AI가 문단 나눈 원본 텍스트 삽입 ---
                 const usableTextWidth = pdfWidth - (textPageMargin * 2);
+
+                // [v4.10] PDF 한글 깨짐 수정: 로드된 'NanumGothic' 폰트 지정
+                pdf.setFont('NanumGothic', 'normal'); 
+                
                 pdf.setFontSize(10); // 가독성을 위한 폰트 크기 설정
                 
                 // .text() 함수는 \n을 인식하며, maxWidth 옵션으로 자동 줄바꿈(word-wrap) 처리
