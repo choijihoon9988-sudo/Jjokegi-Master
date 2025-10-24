@@ -1,5 +1,5 @@
 // choijihoon9988-sudo/jjokegi-master/Jjokegi-Master-9476ee9aa0b5faefd51ff59927133e26c8850901/script.js
-// [v4.4] safeHtml 함수 수정
+// [v4.5] API 400 오류 수정 (safetySettings 오타)
 // --- AI CONFIGURATION ---
         // !!! 중요 !!!: 테스트를 위해 실제 Google AI Studio에서 발급받은 API 키를 "..." 안에 붙여넣으세요.
         const GEMINI_API_KEY = "AIzaSyCVTLte-n_F-83vTq3P1Fc16NzGXdKaIYI"; // ⬅️ 여기에 실제 API 키를 입력하세요.
@@ -630,7 +630,8 @@
                                 { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
                                 { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
                                 { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                                { category: "HARM_CATEGORY_DANGSROUS_CONTENT", threshold: "BLOCK_NONE" }
+                                // [v4.5 수정] 'DANGSROUS' -> 'DANGEROUS' 오타 수정
+                                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
                             ]
                         })
                     });
@@ -856,7 +857,7 @@
                 
                 // 4. 상세 코칭 제목 카드 캡처 
                 // 이 카드는 제목과 설명만 캡처하기 위해 자식 컨테이너를 숨겨야 합니다.
-                reviewContainer.style.display = 'none'; // 자식 컨테이너 숨김
+                reviewContainer.style.display = 'none'; // 자식 컨테인 숨김
                 await new Promise(resolve => setTimeout(resolve, 50)); // DOM 변경 적용 대기
                 
                 canvases.push(await html2canvas(detailedReviewTitleCard, { 
@@ -1007,3 +1008,4 @@
         // 초기 로드
         updateCharCounter();
         updateButtonState(); // [v4.0] 1단계, 2단계 버튼 상태 모두 초기화
+
