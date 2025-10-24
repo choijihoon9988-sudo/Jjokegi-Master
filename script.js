@@ -1,4 +1,8 @@
 // choijihoon9988-sudo/jjokegi-master/Jjokegi-Master-cf08a48a234322a7392f340a45fdc977e1ba0e13/script.js
+// [v4.9] PDF 저장 기능 (B안) 적용: AI가 문단 나눈 원본 텍스트를 1페이지에 삽입
+// [v4.9] SPLIT_PROMPT 수정 (Array -> Object 반환: { chunks: [], formatted_text: "..." })
+// [v4.9] handleStartSplit 수정 (AI 객체 응답 파싱)
+// [v4.9] handleDownloadPDF 수정 (1페이지 텍스트 삽입)
 // [v4.6] 요청 1: 프로그레스 바 기능 적용 (JS)
 // [v4.6] 요청 2: 아코디언 헤더 텍스트 토글 기능 적용 (JS)
 // [v4.5] API 400 오류 수정 (safetySettings 오타)
@@ -10,9 +14,8 @@
         
         // --- [v3.0] S-Class AI Prompts ---
 
-        // --- 1. '해부학자' 프롬프트 (SPLIT_PROMPT v3.0) ---
+        // --- 1. '해부학자' 프롬프트 (SPLIT_PROMPT v3.1 - B안 적용) ---
         const SPLIT_PROMPT = (text, mode) => {
-// ... (이하 프롬프트 내용은 이전과 동일) ...
             const coreInstruction = `
                 You are 'The Scalpel', a master marketer and the author of 'Jjokegi Theory'. Your task is to dissect the provided text from a strategic marketing perspective.
                 Your mission is to deconstruct the text into its 'Minimum Viable Meaning Units' (전략적 최소 의미 단위).
@@ -30,8 +33,25 @@
                     ? "After analyzing the *entire* text, extract *only* the 10 *most strategically important* meaning units from anywhere in the text. Do not just take the first 10."
                     : "Deconstruct the *entire* text into *all* its strategic meaning units, in the order they appear.");
 
-            const outputInstruction = "Your output MUST be a JSON array of strings, with no other text, commentary, or explanation.";
-            return `${coreInstruction}\n\n${modeInstruction}\n\n${outputInstruction}\n\nText to analyze:\n"""${text}"""\n\nOutput only the JSON array.`;
+            // [v4.9] B안 적용: 2가지 업무(chunks, formatted_text) 요청 및 JSON 객체 반환
+            const outputInstruction = `
+                Your output MUST be a single, raw JSON object with no other text, commentary, or explanation.
+                The object MUST have two keys:
+
+                1.  \`chunks\`: A JSON array of strings containing the 'Meaning Units' based on the \`${mode}\` instruction.
+                2.  \`formatted_text\`: The *entire* original text, but with \`\\n\\n\` (double line breaks) inserted at *logically appropriate* points to maximize readability for later review.
+                    - Your goal is to create natural, readable paragraphs.
+                    - If the original text is a single block without line breaks, you MUST analyze the content and insert \`\\n\\n\` based on topic shifts or logical breaks.
+                    - If the original text already has \`\\n\` or \`\\n\\n\`, respect this structure but ensure the *final* output *only* uses \`\\n\\n\` for separation.
+                
+                Example Output Structure:
+                {
+                  "chunks": ["Strategic chunk 1.", "Strategic chunk 2."],
+                  "formatted_text": "This is the full original text.\\n\\nBut I have inserted a logical paragraph break here.\\n\\nAnd another one here."
+                }
+            `;
+            
+            return `${coreInstruction}\n\n${modeInstruction}\n\n${outputInstruction}\n\nText to analyze:\n"""${text}"""\n\nOutput only the JSON object.`;
         };
 
         // --- 2. 'S급 코치' 프롬프트 (FEEDBACK_PROMPT v3.0) ---
@@ -181,6 +201,7 @@
         let loaderInterval = null;
         let lastFeedback = null;
         let originalText = "";
+        let formattedOriginalText = ""; // [v4.9] B안: AI가 문단 나눈 텍스트 저장용
 
         // --- [v4.0] Event Listeners (단계별 UI 반영) ---
         textInput.addEventListener('input', () => {
@@ -262,6 +283,7 @@
         }
 
         // [v2.0] 훈련 시작 (쪼개기)
+        // [v4.9] B안: AI 응답을 객체로 받고, formatted_text 저장
         async function handleStartSplit() {
             const text = textInput.value.trim();
             // [v4.0] 유효성 검사는 1, 2단계에서 이미 처리되었지만, 방어 코드 유지
@@ -274,7 +296,8 @@
                 return;
             }
 
-            originalText = text;
+            originalText = text; // [v4.9] 원본은 여전히 저장 (GROWTH_PROMPT 용)
+            formattedOriginalText = ""; // [v4.9] 초기화
 
             startSplitButton.disabled = true;
             startSplitButton.textContent = 'AI가 쪼개는 중...';
@@ -283,15 +306,24 @@
             showDynamicLoader([
                 "AI가 텍스트를 분석 중입니다...",
                 "최소 의미 단위로 쪼개고 있습니다...",
+                "AI가 가독성을 위해 문단을 나누고 있습니다...", // [v4.9] B안: 로더 메시지 추가
                 "S-Class 훈련을 준비 중입니다..."
             ]);
             errorBanner.classList.add('hidden');
 
             try {
-                // [v3.0] S급 '해부학자' 프롬프트 호출
-                const chunks = await callGeminiApi(SPLIT_PROMPT(text, selectedCourse));
-                originalChunks = chunks;
-                userAnalyses = new Array(chunks.length).fill(null);
+                // [v4.9] B안: 응답을 객체로 받음
+                const response = await callGeminiApi(SPLIT_PROMPT(text, selectedCourse));
+                
+                // [v4.9] B안: 응답 객체 유효성 검사
+                if (!response || !response.chunks || typeof response.formatted_text === 'undefined') {
+                    throw new Error("AI 응답 형식이 올바르지 않습니다. (chunks 또는 formatted_text 누락)");
+                }
+
+                originalChunks = response.chunks;
+                formattedOriginalText = response.formatted_text; // [v4.9] B안: AI가 문단 나눈 텍스트 저장
+                
+                userAnalyses = new Array(originalChunks.length).fill(null);
                 currentChunkIndex = 0;
                 
                 displayCurrentChunk();
@@ -490,13 +522,14 @@
                  
                  // [v4.6] 요청 2: 헤더 텍스트 (축약/전체) 준비
                  const originalChunkText = review.original_chunk;
+                 // [v4.9] B안: '안전하게' HTML 이스케이프 처리된 텍스트를 data 속성에 저장
                  const fullHeaderText = safeHtml(`📄 훈련 #${index + 1}: ${originalChunkText}`);
-                 // 50자로 축약
                  const truncatedHeaderText = safeHtml(`📄 훈련 #${index + 1}: ${truncateText(originalChunkText, 50)}`);
 
 
                  // [v4.2] <details>와 <summary> 구조
                  // [v4.6] <h4>에 data 속성 추가, 기본 텍스트는 축약본
+                 // [v4.9] B안: data 속성 값에 따옴표 추가 (HTML 속성값 표준)
                  const cardHtml = `
                     <details class="review-card">
                         <summary class="review-card-header">
@@ -569,14 +602,13 @@
 
         // --- [v3.0] S급 성장 프롬프트 생성 (신규 함수) ---
         function handleGeneratePrompt() {
-// ... (이하 내용은 이전과 동일) ...
             if (!lastFeedback || !originalText || !userAnalyses) {
                 showError("데이터가 없습니다. 훈련을 먼저 완료해주세요.");
                 return;
             }
 
             const promptText = GROWTH_PROMPT(
-                originalText,
+                originalText, // [v4.9] B안: '성장 프롬프트'에는 AI가 수정한 텍스트가 아닌, 사용자의 '날것' 원본 텍스트를 보냅니다.
                 JSON.stringify(userAnalyses, null, 2),
                 JSON.stringify(lastFeedback, null, 2)
             );
@@ -612,8 +644,8 @@
 
         // --- [v4.0] Reset UI Function (단계별 UI 반영) ---
         // --- [v4.6] 요청 1: 프로그레스 바 리셋 ---
+        // --- [v4.9] B안: formattedOriginalText 초기화 ---
          function resetUI() {
-// ... (이하 내용은 이전과 동일) ...
             // [v4.0] 1단계(입력) 섹션만 표시
             inputSection.classList.remove('hidden');
             courseSection.classList.add('hidden'); // [v4.0] NEW
@@ -632,6 +664,7 @@
             
             lastFeedback = null;
             originalText = "";
+            formattedOriginalText = ""; // [v4.9] B안: 초기화
             
             // [v4.1] html 구조 변경으로, 'S급 성장' 버튼은 항상 hidden 상태로 리셋
             generatePromptButton.classList.add('hidden');
@@ -657,7 +690,6 @@
 
         // --- API CALL LOGIC (v1.2와 동일, 이미 강력함) ---
         async function callGeminiApi(prompt) {
-// ... (이하 내용은 이전과 동일) ...
             console.log("Sending prompt to API:", prompt);
 
             if (GEMINI_API_KEY === "AIzaSyCVTLte-n_F-83vTq3P1Fc16NzGXdKaIYI") {
@@ -729,6 +761,12 @@
 
                         const parsedResult = JSON.parse(jsonString);
                         
+                         // [v4.9] B안: SPLIT_PROMPT에 대한 응답 검증 (객체, chunks, formatted_text 키 확인)
+                         if (prompt.includes('The Scalpel') && (typeof parsedResult !== 'object' || parsedResult === null || !parsedResult.chunks || typeof parsedResult.formatted_text === 'undefined')) {
+                             console.error("Split prompt did not return a valid object with 'chunks' and 'formatted_text':", parsedResult);
+                             throw new Error("AI가 쪼개기 결과를 객체 형식(chunks, formatted_text 포함)으로 반환하지 않았습니다.");
+                         }
+                         
                          if (prompt.includes('S-Class Coach') && (typeof parsedResult !== 'object' || parsedResult === null || !parsedResult.detailed_review)) {
                              console.error("Feedback prompt did not return a valid object with 'detailed_review':", parsedResult);
                              throw new Error("AI가 피드백 결과를 객체 형식(detailed_review 포함)으로 반환하지 않았습니다.");
@@ -759,14 +797,19 @@
              throw new Error(`API 호출이 ${maxRetries}번의 재시도 후에도 실패했습니다.`);
         }
 
-        // --- [수정된 v4.6] PDF 다운로드 기능 (DOM 참조 오류 수정) ---
+        // --- [v4.9] PDF 다운로드 기능 (B안 적용: 1페이지 텍스트 삽입) ---
         async function handleDownloadPDF() {
-// ... (이하 내용은 이전과 동일) ...
             const { jsPDF } = window.jspdf;
             const reportSection = document.getElementById('feedback-report-section');
             
             // [개선 1] 캡처 전에 모든 상세 코칭 아코디언을 찾습니다.
             const accordions = reportSection.querySelectorAll('#detailed-review-container .review-card');
+            
+            // [v4.9] B안: AI가 포맷팅한 텍스트가 있는지 확인
+            if (!formattedOriginalText) {
+                showError("PDF 생성을 위한 원본 텍스트 데이터가 없습니다. 훈련을 다시 시작해주세요.");
+                return;
+            }
             
             showDynamicLoader(["리포트를 PDF로 생성 중입니다..."]);
             downloadPdfButton.disabled = true;
@@ -948,15 +991,28 @@
                     canvases.push(canvas);
                 }
 
-                // --- PDF 생성 로직 (이전 버전과 동일) ---
+                // --- [v4.9] PDF 생성 로직 (B안 적용) ---
                 const pdf = new jsPDF({
                     orientation: 'p',
                     unit: 'px',
                 });
         
                 let pdfWidth = pdf.internal.pageSize.getWidth();
-                const pageMargin = 20; // 페이지 상하단 여백
+                const imagePageMargin = 20; // [v4.9] 이미지 페이지(캡처본) 여백
+                const textPageMargin = 40;  // [v4.9] 텍스트 페이지 여백 (더 넓게)
+
+                // --- [v4.9] B안: 1페이지에 AI가 문단 나눈 원본 텍스트 삽입 ---
+                const usableTextWidth = pdfWidth - (textPageMargin * 2);
+                pdf.setFontSize(10); // 가독성을 위한 폰트 크기 설정
                 
+                // .text() 함수는 \n을 인식하며, maxWidth 옵션으로 자동 줄바꿈(word-wrap) 처리
+                pdf.text(formattedOriginalText, textPageMargin, textPageMargin, { 
+                    maxWidth: usableTextWidth 
+                });
+                // --- [v4.9] 1페이지 완료 ---
+
+
+                // --- [v4.9] B안: 2페이지부터 캡처본(Canvas) 삽입 ---
                 canvases.forEach((canvas, index) => {
                     const imgData = canvas.toDataURL('image/png');
                     const imgWidth = canvas.width;
@@ -964,17 +1020,16 @@
                     const ratio = imgHeight / imgWidth;
                     
                     // PDF 내부 이미지 너비를 페이지 너비에서 좌우 여백을 뺀 값으로 설정
-                    const pdfImgWidth = pdfWidth - (pageMargin * 2);
+                    const pdfImgWidth = pdfWidth - (imagePageMargin * 2);
                     const pdfImgHeight = pdfImgWidth * ratio;
         
-                    // 카드(섹션)별로 새 페이지 강제 분리
-                    if (index > 0) {
-                        pdf.addPage();
-                    }
+                    // [v4.9] B안: 1페이지(텍스트)가 이미 있으므로, 모든 캡처본은 새 페이지에 추가
+                    pdf.addPage();
         
                     // 이미지를 페이지에 추가 (상단 여백 적용)
-                    pdf.addImage(imgData, 'PNG', pageMargin, pageMargin, pdfImgWidth, pdfImgHeight);
+                    pdf.addImage(imgData, 'PNG', imagePageMargin, imagePageMargin, pdfImgWidth, pdfImgHeight);
                 });
+                // --- [v4.9] B안: PDF 생성 완료 ---
         
                 pdf.save(`Jjokegi_Master_Report_${new Date().toISOString().split('T')[0]}.pdf`);
         
@@ -1037,7 +1092,6 @@
 
         // [v2.2] 피드백 텍스트 가독성 개선 헬퍼
         function formatFeedbackText(text) {
-// ... (이하 내용은 이전과 동일) ...
             if (!text) return '';
             // 1. 텍스트를 먼저 안전하게 이스케이프 처리합니다.
             let safeText = safeHtml(text);
