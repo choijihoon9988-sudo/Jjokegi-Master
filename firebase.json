@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "public", // ⬅️ 이 부분을 수정해야 합니다.
+    "public": ".", // ✅ 변경: 현재 폴더(루트)를 배포 대상으로 지정합니다.
     "ignore": [
       "firebase.json",
       "**/.*",
